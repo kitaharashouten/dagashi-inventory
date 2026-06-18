@@ -315,21 +315,28 @@ function micVar(i) {
   varRec = new SR(); varRec.lang = 'ja-JP';
   varRec.onresult = e => {
     const txt = e.results[0][0].transcript.trim();
-    // 末尾の数字を抽出（「みどり 3」→ name=みどり, count=3）
-    const m = txt.match(/^(.+?)\s+(\d+)$/) || txt.match(/^(\d+)\s+(.+?)$/);
+    // 数字（半角・漢数字）を変換
+    const kanji = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'十一':11,'十二':12,'十三':13,'十四':14,'十五':15,'十六':16,'十七':17,'十八':18,'十九':19,'二十':20};
+    let normalized = txt;
+    Object.keys(kanji).sort((a,b)=>b.length-a.length).forEach(k => {
+      normalized = normalized.replace(new RegExp(k,'g'), kanji[k]);
+    });
+    // パターン：「名前 数字」「数字 名前」「名前数字」いずれも対応（スペース有無問わず）
+    const m = normalized.match(/^(.+?)[\s　]*(\d+)個?$/) ||
+              normalized.match(/^(\d+)個?[\s　]*(.+?)$/) ||
+              normalized.match(/^(.+?)(\d+)個?$/);
     if(m) {
-      const name = isNaN(m[1]) ? m[1].trim() : m[2].trim();
-      const count = parseInt(isNaN(m[1]) ? m[2] : m[1]);
-      formVars[i].name = name;
+      const p1isNum = /^\d+$/.test(m[1]);
+      const name = p1isNum ? m[2].trim() : m[1].trim();
+      const count = parseInt(p1isNum ? m[1] : m[2]);
+      if(name) formVars[i].name = name;
       formVars[i].count = Math.max(0, count);
+    } else if(/^\d+$/.test(normalized)) {
+      // 数字だけ → 個数のみ更新
+      formVars[i].count = Math.max(0, parseInt(normalized));
     } else {
-      // 数字だけなら個数、そうでなければ名前
-      const num = parseInt(txt);
-      if(!isNaN(num) && txt.match(/^\d+$/)) {
-        formVars[i].count = Math.max(0, num);
-      } else {
-        formVars[i].name = txt;
-      }
+      // テキストだけ → 名前のみ更新
+      formVars[i].name = txt;
     }
     renderFormVars();
   };
@@ -357,8 +364,17 @@ function fvc(i, d) {
   document.getElementById('fvn-'+i).textContent = formVars[i].count;
 }
 
-// 初期バリエーション1つ用意
-addVar();
+// 初期バリエーション：拠点4つをデフォルトで用意
+function initVars() {
+  formVars = [
+    {name:'渋谷', count:0},
+    {name:'出町柳', count:0},
+    {name:'新町御池', count:0},
+    {name:'円町', count:0}
+  ];
+  renderFormVars();
+}
+initVars();
 
 // ===== 保存 / 更新 =====
 async function save() {
@@ -401,8 +417,7 @@ function resetForm() {
   document.getElementById('ip').style.display = '';
   document.getElementById('ii').value = '';
   img = null;
-  formVars = [];
-  addVar();
+  initVars();
   document.getElementById('saveBtn').textContent = '保存する';
   const cb = document.getElementById('cancelEditBtn');
   if(cb) cb.style.display = 'none';
@@ -446,7 +461,7 @@ function getVars(it) {
   if(it.variants && it.variants.length) return it.variants;
   // 旧形式: sh/shin/dema/maru フィールド → 変換して表示
   const old = [];
-  const LOCS = {sh:'渋谷', shin:'新町', dema:'出町柳', maru:'円町'};
+  const LOCS = {sh:'渋谷', shin:'新町御池', dema:'出町柳', maru:'円町'};
   Object.keys(LOCS).forEach(k => { if(it[k]) old.push({name: LOCS[k], count: it[k]}); });
   return old;
 }
