@@ -108,8 +108,8 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 </style>
 </head>
 <body>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"><\/script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"><\/script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <div class="app-shell">
   <div class="app-header">
@@ -205,8 +205,10 @@ const db = firebase.firestore();
 const col = db.collection('items');
 
 let items = [], img = null, rec = null, curTab = 'add', cf = 'all';
-let formVars = [];
+// 登録フォームのバリエーションリスト
+let formVars = []; // [{name:'', count:0}]
 
+// ===== リアルタイム同期 =====
 col.orderBy('createdAt','asc').onSnapshot(snap => {
   items = snap.docs.map(d => ({id: d.id, ...d.data()}));
   const b = document.getElementById('syncBadge');
@@ -218,6 +220,7 @@ col.orderBy('createdAt','asc').onSnapshot(snap => {
   b.textContent = '接続エラー'; b.className = 'sync-badge err';
 });
 
+// ===== タブ =====
 function sw(n) {
   curTab = n;
   document.querySelectorAll('.tab').forEach(t => {
@@ -229,6 +232,7 @@ function sw(n) {
   if(n==='check') rc();
 }
 
+// ===== 写真 =====
 function prevImg(i) {
   if(!i.files[0]) return;
   const reader = new FileReader();
@@ -252,6 +256,7 @@ function prevImg(i) {
   reader.readAsDataURL(i.files[0]);
 }
 
+// ===== 音声 =====
 function mic() {
   const b = document.getElementById('mb'), l = document.getElementById('ml');
   if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
@@ -265,82 +270,162 @@ function mic() {
   rec.start(); b.classList.add('rec'); l.textContent = '聞いてるよ...';
 }
 
+// ===== バリエーション入力フォーム =====
 function renderFormVars() {
   const el = document.getElementById('varList');
-  el.innerHTML = formVars.map((v, i) => `<div class="var-row"><input class="var-name" type="text" placeholder="色・種類（例:緑）" value="${v.name}" oninput="formVars[${i}].name=this.value"><div class="var-ctrl"><div class="var-btn" onclick="fvc(${i},-1)">−</div><div class="var-num" id="fvn-${i}">${v.count}</div><div class="var-btn" onclick="fvc(${i},1)">＋</div></div><button class="var-del" onclick="delVar(${i})">✕</button></div>`).join('');
+  el.innerHTML = formVars.map((v, i) => `
+    <div class="var-row">
+      <input class="var-name" type="text" placeholder="色・種類（例：緑）" value="${v.name}"
+        oninput="formVars[${i}].name=this.value">
+      <div class="var-ctrl">
+        <div class="var-btn" onclick="fvc(${i},-1)">−</div>
+        <div class="var-num" id="fvn-${i}">${v.count}</div>
+        <div class="var-btn" onclick="fvc(${i},1)">＋</div>
+      </div>
+      <button class="var-del" onclick="delVar(${i})" title="削除">✕</button>
+    </div>`).join('');
 }
 
-function addVar() { formVars.push({name:'', count:0}); renderFormVars(); }
-function delVar(i) { formVars.splice(i,1); renderFormVars(); }
-function fvc(i,d) { formVars[i].count=Math.max(0,formVars[i].count+d); document.getElementById('fvn-'+i).textContent=formVars[i].count; }
+function addVar() {
+  formVars.push({name:'', count:0});
+  renderFormVars();
+}
 
+function delVar(i) {
+  formVars.splice(i, 1);
+  renderFormVars();
+}
+
+function fvc(i, d) {
+  formVars[i].count = Math.max(0, formVars[i].count + d);
+  document.getElementById('fvn-'+i).textContent = formVars[i].count;
+}
+
+// 初期バリエーション1つ用意
 addVar();
 
+// ===== 保存 =====
 async function save() {
   const n = document.getElementById('nm').value.trim();
   if(!n){ alert('商品名を入力してください'); return; }
-  const vars = formVars.filter(v=>v.name.trim()!=='').map(v=>({name:v.name.trim(),count:v.count}));
+  // 名前が空のバリエーションは除外
+  const vars = formVars.filter(v => v.name.trim() !== '').map(v => ({name: v.name.trim(), count: v.count}));
   const btn = document.getElementById('saveBtn');
-  btn.disabled=true; btn.textContent='保存中...';
+  btn.disabled = true; btn.textContent = '保存中...';
   try {
-    await col.add({name:n, cat:document.getElementById('ct').value, img:img||null, variants:vars, createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    document.getElementById('nm').value='';
-    const iv=document.getElementById('iv'); iv.style.display='none'; iv.src='';
-    document.getElementById('ip').style.display='';
-    document.getElementById('ii').value='';
-    img=null; formVars=[]; addVar();
-    alert(n+' を保存したおいっす！');
-  } catch(e){ alert('保存に失敗したおいっす: '+e.message); }
-  finally{ btn.disabled=false; btn.textContent='保存する'; }
+    await col.add({
+      name: n,
+      cat: document.getElementById('ct').value,
+      img: img || null,
+      variants: vars,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // リセット
+    document.getElementById('nm').value = '';
+    const iv = document.getElementById('iv');
+    iv.style.display = 'none'; iv.src = '';
+    document.getElementById('ip').style.display = '';
+    document.getElementById('ii').value = '';
+    img = null;
+    formVars = [];
+    addVar();
+    alert(n + ' を保存したおいっす！');
+  } catch(e) {
+    alert('保存に失敗したおいっす: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '保存する';
+  }
 }
 
-function filt(f,el){ cf=f; document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); rl(); }
+// ===== 一覧 =====
+function filt(f, el) {
+  cf = f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active'); rl();
+}
 
 function getVars(it) {
-  if(it.variants&&it.variants.length) return it.variants;
-  const old=[]; const LOCS={sh:'渋谷',shin:'新町',dema:'出町柳',maru:'円町'};
-  Object.keys(LOCS).forEach(k=>{if(it[k])old.push({name:LOCS[k],count:it[k]});});
+  // 新形式: variants配列
+  if(it.variants && it.variants.length) return it.variants;
+  // 旧形式: sh/shin/dema/maru フィールド → 変換して表示
+  const old = [];
+  const LOCS = {sh:'渋谷', shin:'新町', dema:'出町柳', maru:'円町'};
+  Object.keys(LOCS).forEach(k => { if(it[k]) old.push({name: LOCS[k], count: it[k]}); });
   return old;
 }
-function getTotal(it){ return getVars(it).reduce((s,v)=>s+(v.count||0),0); }
+
+function getTotal(it) {
+  return getVars(it).reduce((s, v) => s + (v.count||0), 0);
+}
 
 function rl() {
-  const el=document.getElementById('il');
-  const fl=cf==='all'?items:items.filter(i=>i.cat===cf);
-  if(!fl.length){el.innerHTML='<div class="empty">まだ登録がないおいっす</div>';return;}
-  el.innerHTML=fl.map(it=>{
-    const vars=getVars(it), tot=getTotal(it);
-    const badges=vars.map(v=>`<span class="vbdg">${v.name} <b>${v.count||0}</b></span>`).join('')+`<span class="vbdg tot">計 <b id="vbt-${it.id}">${tot}</b></span>`;
-    const editRows=vars.map((v,vi)=>`<div class="vedit-row"><span class="vedit-lbl">${v.name}</span><div class="vicb" onclick="uv('${it.id}',${vi},-1)">−</div><div class="vicn" id="vn-${it.id}-${vi}">${v.count||0}</div><div class="vicb" onclick="uv('${it.id}',${vi},1)">＋</div></div>`).join('');
-    return `<div class="item-card"><div class="thumb">${it.img?`<img src="${it.img}" alt="${it.name}">`:'📦'}</div><div class="iinfo"><div class="iname">${it.name}</div><div class="icat">${it.cat}</div><div class="vbadges">${badges}</div><div class="vedit">${editRows}</div></div></div>`;
+  const el = document.getElementById('il');
+  const fl = cf==='all' ? items : items.filter(i => i.cat===cf);
+  if(!fl.length){ el.innerHTML = '<div class="empty">まだ登録がないおいっす</div>'; return; }
+  el.innerHTML = fl.map(it => {
+    const vars = getVars(it);
+    const tot = getTotal(it);
+    const badges = vars.map(v => `<span class="vbdg">${v.name} <b>${v.count||0}</b></span>`).join('') +
+      `<span class="vbdg tot">計 <b id="vbt-${it.id}">${tot}</b></span>`;
+    const editRows = vars.map((v, vi) => `
+      <div class="vedit-row">
+        <span class="vedit-lbl">${v.name}</span>
+        <div class="vicb" onclick="uv('${it.id}',${vi},-1)">−</div>
+        <div class="vicn" id="vn-${it.id}-${vi}">${v.count||0}</div>
+        <div class="vicb" onclick="uv('${it.id}',${vi},1)">＋</div>
+      </div>`).join('');
+    return `<div class="item-card">
+      <div class="thumb">${it.img ? `<img src="${it.img}" alt="${it.name}">` : '📦'}</div>
+      <div class="iinfo">
+        <div class="iname">${it.name}</div>
+        <div class="icat">${it.cat}</div>
+        <div class="vbadges">${badges}</div>
+        <div class="vedit">${editRows}</div>
+      </div>
+    </div>`;
   }).join('');
 }
 
-async function uv(id,vi,d) {
-  const it=items.find(i=>i.id===id); if(!it) return;
-  const vars=it.variants?[...it.variants]:getVars(it).map(v=>({...v}));
+// ===== バリエーション在庫更新 =====
+async function uv(id, vi, d) {
+  const it = items.find(i => i.id===id); if(!it) return;
+  const vars = it.variants ? [...it.variants] : getVars(it).map(v => ({...v}));
   if(!vars[vi]) return;
-  vars[vi].count=Math.max(0,(vars[vi].count||0)+d);
-  it.variants=vars;
-  const numEl=document.getElementById('vn-'+id+'-'+vi); if(numEl)numEl.textContent=vars[vi].count;
-  const tot=vars.reduce((s,v)=>s+(v.count||0),0);
-  const totEl=document.getElementById('vbt-'+id); if(totEl)totEl.textContent=tot;
-  try{await col.doc(id).update({variants:vars});}catch(e){console.error(e);}
+  vars[vi].count = Math.max(0, (vars[vi].count||0) + d);
+  it.variants = vars;
+  // DOM即時反映
+  const numEl = document.getElementById('vn-'+id+'-'+vi);
+  if(numEl) numEl.textContent = vars[vi].count;
+  const tot = vars.reduce((s,v) => s+(v.count||0), 0);
+  const totEl = document.getElementById('vbt-'+id);
+  if(totEl) totEl.textContent = tot;
+  // Firestore更新
+  try { await col.doc(id).update({variants: vars}); }
+  catch(e){ console.error(e); }
 }
 
+// ===== チェックリスト =====
 function rc() {
-  const el=document.getElementById('cl');
-  if(!items.length){el.innerHTML='<div class="empty">在庫がまだ登録されていないおいっす</div>';return;}
-  const cats=[...new Set(items.map(i=>i.cat))];
-  el.innerHTML=cats.map(cat=>{
-    const rows=items.filter(i=>i.cat===cat).map(it=>{
-      const vars=getVars(it), tot=getTotal(it);
-      const varBadges=vars.map(v=>`<span class="ck-vbdg">${v.name} ${v.count||0}</span>`).join('');
-      return `<div class="ck-row"><div class="ck-th">${it.img?`<img src="${it.img}">`:'📦'}</div><div class="ck-body"><div class="ck-name">${it.name}</div><div class="ck-vars">${varBadges||'<span style="font-size:10px;color:#ccc">バリエーションなし</span>'}</div></div><div class="ck-tot${tot===0?' zero':''}">${tot}</div></div>`;
+  const el = document.getElementById('cl');
+  if(!items.length){ el.innerHTML = '<div class="empty">在庫がまだ登録されていないおいっす</div>'; return; }
+  const cats = [...new Set(items.map(i => i.cat))];
+  el.innerHTML = cats.map(cat => {
+    const rows = items.filter(i => i.cat===cat).map(it => {
+      const vars = getVars(it);
+      const tot = getTotal(it);
+      const varBadges = vars.map(v => `<span class="ck-vbdg">${v.name} ${v.count||0}</span>`).join('');
+      return `<div class="ck-row">
+        <div class="ck-th">${it.img ? `<img src="${it.img}">` : '📦'}</div>
+        <div class="ck-body">
+          <div class="ck-name">${it.name}</div>
+          <div class="ck-vars">${varBadges || '<span style="font-size:10px;color:#ccc">バリエーションなし</span>'}</div>
+        </div>
+        <div class="ck-tot${tot===0?' zero':''}">${tot}</div>
+      </div>`;
     }).join('');
     return `<div class="ck-card"><div class="ck-cat">${cat}</div>${rows}</div>`;
   }).join('');
 }
-<\/script>
+</script>
 </body>
 </html>
