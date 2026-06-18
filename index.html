@@ -9,7 +9,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#222;min-height:100vh}
 
-/* ===== モバイルレイアウト ===== */
+/* ===== モバイル ===== */
 .app-shell{max-width:480px;margin:0 auto;padding:0.75rem;min-height:100vh}
 .app-header{font-size:18px;font-weight:500;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
 .sync-badge{font-size:11px;padding:2px 8px;border-radius:20px;background:#fef9e8;color:#b45309;border:1px solid #b45309;margin-left:auto}
@@ -21,7 +21,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tab.active{background:#eee;color:#222;font-weight:500;border-color:#999}
 .section{display:none}.section.active{display:block}
 
-/* ===== PCレイアウト ===== */
+/* ===== PC ===== */
 @media(min-width:768px){
   body{display:flex;flex-direction:column}
   .app-shell{max-width:100%;padding:0;display:flex;flex-direction:column;height:100vh}
@@ -49,17 +49,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .img-upload img{max-width:100%;max-height:120px;object-fit:contain;border-radius:8px}
 input[type=text],select{width:100%;margin-bottom:0.75rem;padding:8px 10px;border:1px solid #ccc;border-radius:8px;font-size:14px;background:#fff;color:#222}
 input[type=text]:focus,select:focus{outline:none;border-color:#888}
-.loc-row{display:flex;gap:6px;margin-bottom:4px}
-.loc-row2{display:flex;gap:6px;margin-bottom:0.75rem}
-.loc-btn{flex:1;padding:8px;font-size:12px;border:1px solid #ccc;border-radius:8px;background:#fff;color:#888;cursor:pointer;text-align:center;transition:all .15s}
-.loc-btn.active{background:#e8f0fe;color:#1a56db;border-color:#1a56db;font-weight:500}
-.loc-btn.kactive{background:#e8fef0;color:#057a55;border-color:#057a55;font-weight:500}
-.cnt-row{display:flex;align-items:center;gap:10px;margin-bottom:0.75rem}
-.cnt-row label{font-size:13px;color:#888;flex:1}
-.cnt-ctrl{display:flex;align-items:center;gap:8px}
-.cnt-btn{width:36px;height:36px;border:1px solid #ccc;border-radius:8px;background:#f0f0f0;color:#222;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none}
-.cnt-btn:hover{background:#e0e0e0}
-.cnt-num{min-width:28px;text-align:center;font-size:16px;font-weight:500}
 .mic-btn{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;background:#f5f5f5;color:#888;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:0.75rem}
 .mic-btn.rec{background:#fef2f2;color:#dc2626;border-color:#dc2626;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
@@ -68,24 +57,35 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .save-btn:disabled{background:#aaa;cursor:not-allowed}
 @media(min-width:768px){.save-btn{max-width:320px}}
 
+/* ===== バリエーション入力 ===== */
+.var-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.var-row{display:flex;align-items:center;gap:6px}
+.var-name{flex:1;margin-bottom:0!important;font-size:13px}
+.var-ctrl{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.var-btn{width:30px;height:30px;border:1px solid #ccc;border-radius:6px;background:#f0f0f0;color:#222;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;flex-shrink:0}
+.var-btn:hover{background:#e0e0e0}
+.var-num{min-width:24px;text-align:center;font-size:14px;font-weight:500}
+.var-del{width:28px;height:28px;border:none;border-radius:6px;background:transparent;color:#ccc;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.var-del:hover{color:#dc2626;background:#fef2f2}
+.add-var-btn{width:100%;padding:8px;border:1px dashed #bbb;border-radius:8px;background:#fff;color:#888;cursor:pointer;font-size:13px;text-align:center;margin-bottom:0.75rem}
+.add-var-btn:hover{border-color:#888;color:#444}
+
 /* ===== 一覧 ===== */
 .item-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:0.75rem 1rem;display:flex;gap:10px;align-items:flex-start}
 .thumb{width:54px;height:54px;border-radius:8px;flex-shrink:0;background:#f5f5f5;border:1px solid #e0e0e0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:22px}
 .thumb img{width:54px;height:54px;object-fit:cover}
 .iinfo{flex:1;min-width:0}
 .iname{font-size:14px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.icat{font-size:12px;color:#888;margin-bottom:4px}
-.badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px}
-.bdg{font-size:11px;padding:2px 7px;border-radius:20px;border:1px solid #e0e0e0}
-.bdg.sh{background:#e8f0fe;color:#1a56db}
-.bdg.ky{background:#e8fef0;color:#057a55}
-.bdg.tt{background:#f5f5f5;color:#666}
-.sedit{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.sedit>span{font-size:11px;color:#888;margin-left:2px}
-.icnt{display:flex;align-items:center;gap:3px}
-.icb{width:24px;height:24px;border:1px solid #ccc;border-radius:6px;background:#f0f0f0;color:#222;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none}
-.icb:hover{background:#e0e0e0}
-.icn{min-width:18px;text-align:center;font-size:12px;font-weight:500}
+.icat{font-size:12px;color:#888;margin-bottom:5px}
+.vbadges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+.vbdg{font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid #e0e0e0;background:#f5f5f5;color:#555}
+.vbdg.tot{background:#fff3cd;color:#856404;border-color:#ffc107}
+.vedit{display:flex;flex-direction:column;gap:4px}
+.vedit-row{display:flex;align-items:center;gap:5px}
+.vedit-lbl{font-size:11px;color:#888;min-width:32px}
+.vicb{width:22px;height:22px;border:1px solid #ccc;border-radius:5px;background:#f0f0f0;color:#222;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;flex-shrink:0}
+.vicb:hover{background:#e0e0e0}
+.vicn{min-width:20px;text-align:center;font-size:12px;font-weight:500}
 .chips{display:flex;gap:5px;margin-bottom:0.75rem;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
 .chip{padding:5px 12px;border-radius:20px;border:1px solid #ccc;background:#fff;color:#888;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .chip.active{background:#f0f0f0;color:#222;font-weight:500;border-color:#999}
@@ -95,20 +95,21 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .ck-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:0.75rem 1rem;margin-bottom:0.5rem}
 @media(min-width:768px){.ck-card{margin-bottom:0}}
 .ck-cat{font-size:12px;font-weight:500;color:#888;margin-bottom:6px}
-.ck-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0}
+.ck-row{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0}
 .ck-row:last-child{border-bottom:none}
-.ck-th{width:32px;height:32px;border-radius:6px;overflow:hidden;flex-shrink:0;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:16px}
+.ck-th{width:32px;height:32px;border-radius:6px;overflow:hidden;flex-shrink:0;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:16px;margin-top:2px}
 .ck-th img{width:32px;height:32px;object-fit:cover}
-.ck-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ck-sub{font-size:10px;color:#888}
-.ck-tot{font-size:15px;font-weight:500;flex-shrink:0;margin-left:auto;padding-left:8px}
+.ck-body{flex:1;min-width:0}
+.ck-name{font-size:13px;font-weight:500;margin-bottom:2px}
+.ck-vars{display:flex;flex-wrap:wrap;gap:4px}
+.ck-vbdg{font-size:10px;padding:1px 7px;border-radius:20px;background:#f5f5f5;border:1px solid #e0e0e0;color:#555}
+.ck-tot{font-size:15px;font-weight:500;flex-shrink:0;padding-left:8px;margin-top:2px}
 .zero{color:#dc2626}
 </style>
 </head>
 <body>
-<!-- Firebase SDK (compat v10) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"><\/script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"><\/script>
 
 <div class="app-shell">
   <div class="app-header">
@@ -154,22 +155,9 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
           </div>
           <div class="form-col">
             <div class="card">
-              <div class="lbl">場所</div>
-              <div class="loc-row"><div class="loc-btn active" id="l-sh" onclick="setL('sh')">渋谷</div></div>
-              <div class="loc-row2">
-                <div class="loc-btn" id="l-shin" onclick="setL('shin')">新町</div>
-                <div class="loc-btn" id="l-dema" onclick="setL('dema')">出町柳</div>
-                <div class="loc-btn" id="l-maru" onclick="setL('maru')">円町</div>
-              </div>
-              <div class="lbl">在庫数</div>
-              <div class="cnt-row">
-                <label>数量</label>
-                <div class="cnt-ctrl">
-                  <div class="cnt-btn" onclick="chg(-1)">−</div>
-                  <div class="cnt-num" id="cd">0</div>
-                  <div class="cnt-btn" onclick="chg(1)">＋</div>
-                </div>
-              </div>
+              <div class="lbl">バリエーション（色・種類など）</div>
+              <div class="var-list" id="varList"></div>
+              <div class="add-var-btn" onclick="addVar()">＋ バリエーション追加</div>
             </div>
           </div>
         </div>
@@ -194,7 +182,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
       <!-- チェックタブ -->
       <div id="tab-check" class="section">
         <div class="ck-card" style="margin-bottom:0.75rem">
-          <p style="font-size:13px;color:#888">イベント前チェックリスト — 全拠点の合計在庫</p>
+          <p style="font-size:13px;color:#888">イベント前チェックリスト — バリエーション別在庫</p>
         </div>
         <div id="cl"></div>
       </div>
@@ -216,9 +204,8 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const col = db.collection('items');
 
-const LOCS = {sh:'渋谷', shin:'新町', dema:'出町柳', maru:'円町'};
-const LK = Object.keys(LOCS);
-let items = [], cnt = 0, loc = 'sh', cf = 'all', img = null, rec = null, curTab = 'add';
+let items = [], img = null, rec = null, curTab = 'add', cf = 'all';
+let formVars = [];
 
 col.orderBy('createdAt','asc').onSnapshot(snap => {
   items = snap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -234,8 +221,7 @@ col.orderBy('createdAt','asc').onSnapshot(snap => {
 function sw(n) {
   curTab = n;
   document.querySelectorAll('.tab').forEach(t => {
-    const oc = t.getAttribute('onclick');
-    t.classList.toggle('active', oc === "sw('" + n + "')");
+    t.classList.toggle('active', t.getAttribute('onclick') === "sw('"+n+"')");
   });
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('tab-'+n).classList.add('active');
@@ -279,85 +265,82 @@ function mic() {
   rec.start(); b.classList.add('rec'); l.textContent = '聞いてるよ...';
 }
 
-function chg(d){ cnt = Math.max(0, cnt+d); document.getElementById('cd').textContent = cnt; }
-
-function setL(l_) {
-  loc = l_;
-  LK.forEach(k => {
-    const el = document.getElementById('l-'+k); if(!el) return;
-    el.classList.remove('active','kactive');
-    if(k===l_) el.classList.add(k==='sh' ? 'active' : 'kactive');
-  });
+function renderFormVars() {
+  const el = document.getElementById('varList');
+  el.innerHTML = formVars.map((v, i) => `<div class="var-row"><input class="var-name" type="text" placeholder="色・種類（例:緑）" value="${v.name}" oninput="formVars[${i}].name=this.value"><div class="var-ctrl"><div class="var-btn" onclick="fvc(${i},-1)">−</div><div class="var-num" id="fvn-${i}">${v.count}</div><div class="var-btn" onclick="fvc(${i},1)">＋</div></div><button class="var-del" onclick="delVar(${i})">✕</button></div>`).join('');
 }
+
+function addVar() { formVars.push({name:'', count:0}); renderFormVars(); }
+function delVar(i) { formVars.splice(i,1); renderFormVars(); }
+function fvc(i,d) { formVars[i].count=Math.max(0,formVars[i].count+d); document.getElementById('fvn-'+i).textContent=formVars[i].count; }
+
+addVar();
 
 async function save() {
   const n = document.getElementById('nm').value.trim();
   if(!n){ alert('商品名を入力してください'); return; }
+  const vars = formVars.filter(v=>v.name.trim()!=='').map(v=>({name:v.name.trim(),count:v.count}));
   const btn = document.getElementById('saveBtn');
-  btn.disabled = true; btn.textContent = '保存中...';
+  btn.disabled=true; btn.textContent='保存中...';
   try {
-    const st = {sh:0, shin:0, dema:0, maru:0};
-    st[loc] = cnt;
-    await col.add({ name: n, cat: document.getElementById('ct').value, img: img || null, ...st, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    document.getElementById('nm').value = '';
-    const iv = document.getElementById('iv');
-    iv.style.display = 'none'; iv.src = '';
-    document.getElementById('ip').style.display = '';
-    document.getElementById('ii').value = '';
-    img = null; cnt = 0; document.getElementById('cd').textContent = '0';
-    alert(n + ' を保存したおいっす！');
-  } catch(e) {
-    alert('保存に失敗したおいっす: ' + e.message);
-  } finally {
-    btn.disabled = false; btn.textContent = '保存する';
-  }
+    await col.add({name:n, cat:document.getElementById('ct').value, img:img||null, variants:vars, createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    document.getElementById('nm').value='';
+    const iv=document.getElementById('iv'); iv.style.display='none'; iv.src='';
+    document.getElementById('ip').style.display='';
+    document.getElementById('ii').value='';
+    img=null; formVars=[]; addVar();
+    alert(n+' を保存したおいっす！');
+  } catch(e){ alert('保存に失敗したおいっす: '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='保存する'; }
 }
 
-function filt(f, el) {
-  cf = f;
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active'); rl();
+function filt(f,el){ cf=f; document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); rl(); }
+
+function getVars(it) {
+  if(it.variants&&it.variants.length) return it.variants;
+  const old=[]; const LOCS={sh:'渋谷',shin:'新町',dema:'出町柳',maru:'円町'};
+  Object.keys(LOCS).forEach(k=>{if(it[k])old.push({name:LOCS[k],count:it[k]});});
+  return old;
 }
+function getTotal(it){ return getVars(it).reduce((s,v)=>s+(v.count||0),0); }
 
 function rl() {
-  const el = document.getElementById('il');
-  const fl = cf==='all' ? items : items.filter(i => i.cat===cf);
-  if(!fl.length){ el.innerHTML = '<div class="empty">まだ登録がないおいっす</div>'; return; }
-  el.innerHTML = fl.map(it => {
-    const tot = LK.reduce((s,k) => s+(it[k]||0), 0);
-    const bdg = '<span class="bdg sh">渋谷 <b id="b-sh-'+it.id+'">'+(it.sh||0)+'</b></span>' +
-      ['shin','dema','maru'].map(k=>'<span class="bdg ky">'+LOCS[k]+' <b id="b-'+k+'-'+it.id+'">'+(it[k]||0)+'</b></span>').join('') +
-      '<span class="bdg tt">計 <b id="bt-'+it.id+'">'+tot+'</b></span>';
-    const edt = LK.map(k=>'<span>'+LOCS[k]+'</span><div class="icnt"><div class="icb" onclick="us(''+it.id+'',''+k+'',-1)">−</div><div class="icn" id="e-'+k+'-'+it.id+'">'+(it[k]||0)+'</div><div class="icb" onclick="us(''+it.id+'',''+k+'',1)">＋</div></div>').join('');
-    return '<div class="item-card"><div class="thumb">'+(it.img?'<img src="'+it.img+'" alt="'+it.name+'">':'📦')+'</div><div class="iinfo"><div class="iname">'+it.name+'</div><div class="icat">'+it.cat+'</div><div class="badges">'+bdg+'</div><div class="sedit">'+edt+'</div></div></div>';
+  const el=document.getElementById('il');
+  const fl=cf==='all'?items:items.filter(i=>i.cat===cf);
+  if(!fl.length){el.innerHTML='<div class="empty">まだ登録がないおいっす</div>';return;}
+  el.innerHTML=fl.map(it=>{
+    const vars=getVars(it), tot=getTotal(it);
+    const badges=vars.map(v=>`<span class="vbdg">${v.name} <b>${v.count||0}</b></span>`).join('')+`<span class="vbdg tot">計 <b id="vbt-${it.id}">${tot}</b></span>`;
+    const editRows=vars.map((v,vi)=>`<div class="vedit-row"><span class="vedit-lbl">${v.name}</span><div class="vicb" onclick="uv('${it.id}',${vi},-1)">−</div><div class="vicn" id="vn-${it.id}-${vi}">${v.count||0}</div><div class="vicb" onclick="uv('${it.id}',${vi},1)">＋</div></div>`).join('');
+    return `<div class="item-card"><div class="thumb">${it.img?`<img src="${it.img}" alt="${it.name}">`:'📦'}</div><div class="iinfo"><div class="iname">${it.name}</div><div class="icat">${it.cat}</div><div class="vbadges">${badges}</div><div class="vedit">${editRows}</div></div></div>`;
   }).join('');
 }
 
-async function us(id, k, d) {
-  const it = items.find(i => i.id===id); if(!it) return;
-  const nv = Math.max(0, (it[k]||0)+d);
-  it[k] = nv;
-  const eb = document.getElementById('e-'+k+'-'+id);
-  const bb = document.getElementById('b-'+k+'-'+id);
-  if(eb) eb.textContent = nv;
-  if(bb) bb.textContent = nv;
-  const tot = LK.reduce((s,kk) => s+(it[kk]||0), 0);
-  const tb = document.getElementById('bt-'+id); if(tb) tb.textContent = tot;
-  try { await col.doc(id).update({[k]: nv}); } catch(e){ console.error(e); }
+async function uv(id,vi,d) {
+  const it=items.find(i=>i.id===id); if(!it) return;
+  const vars=it.variants?[...it.variants]:getVars(it).map(v=>({...v}));
+  if(!vars[vi]) return;
+  vars[vi].count=Math.max(0,(vars[vi].count||0)+d);
+  it.variants=vars;
+  const numEl=document.getElementById('vn-'+id+'-'+vi); if(numEl)numEl.textContent=vars[vi].count;
+  const tot=vars.reduce((s,v)=>s+(v.count||0),0);
+  const totEl=document.getElementById('vbt-'+id); if(totEl)totEl.textContent=tot;
+  try{await col.doc(id).update({variants:vars});}catch(e){console.error(e);}
 }
 
 function rc() {
-  const el = document.getElementById('cl');
-  if(!items.length){ el.innerHTML = '<div class="empty">在庫がまだ登録されていないおいっす</div>'; return; }
-  const cats = [...new Set(items.map(i => i.cat))];
-  el.innerHTML = cats.map(cat => {
-    const rows = items.filter(i => i.cat===cat).map(it => {
-      const tot = LK.reduce((s,k) => s+(it[k]||0), 0);
-      return '<div class="ck-row"><div class="ck-th">'+(it.img?'<img src="'+it.img+'">':'📦')+'</div><div style="flex:1;min-width:0"><div class="ck-name">'+it.name+'</div><div class="ck-sub">'+LK.map(k=>LOCS[k]+' '+(it[k]||0)).join(' / ')+'</div></div><div class="ck-tot'+(tot===0?' zero':'')+'">'+tot+'</div></div>';
+  const el=document.getElementById('cl');
+  if(!items.length){el.innerHTML='<div class="empty">在庫がまだ登録されていないおいっす</div>';return;}
+  const cats=[...new Set(items.map(i=>i.cat))];
+  el.innerHTML=cats.map(cat=>{
+    const rows=items.filter(i=>i.cat===cat).map(it=>{
+      const vars=getVars(it), tot=getTotal(it);
+      const varBadges=vars.map(v=>`<span class="ck-vbdg">${v.name} ${v.count||0}</span>`).join('');
+      return `<div class="ck-row"><div class="ck-th">${it.img?`<img src="${it.img}">`:'📦'}</div><div class="ck-body"><div class="ck-name">${it.name}</div><div class="ck-vars">${varBadges||'<span style="font-size:10px;color:#ccc">バリエーションなし</span>'}</div></div><div class="ck-tot${tot===0?' zero':''}">${tot}</div></div>`;
     }).join('');
-    return '<div class="ck-card"><div class="ck-cat">'+cat+'</div>'+rows+'</div>';
+    return `<div class="ck-card"><div class="ck-cat">${cat}</div>${rows}</div>`;
   }).join('');
 }
-</script>
+<\/script>
 </body>
 </html>
