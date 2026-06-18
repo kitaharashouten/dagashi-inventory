@@ -84,6 +84,11 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .move-cancel-btn{width:100%;padding:8px;background:transparent;color:#888;border:none;font-size:13px;cursor:pointer;margin-top:6px}
 .move-toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-size:13px;padding:8px 16px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:300}
 .move-toast.show{opacity:1}
+.move-qty-section{background:#f5f5f0;border-radius:8px;padding:12px;margin-bottom:12px;display:none}
+.move-qty-label{font-size:12px;color:#888;margin-bottom:8px}
+.move-qty-row{display:flex;align-items:center;gap:10px}
+.move-qty-num{font-size:22px;font-weight:500;min-width:36px;text-align:center}
+.move-qty-max{font-size:11px;color:#aaa;margin-top:6px}
 
 /* ===== 場所チップ ===== */
 .loc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
@@ -240,6 +245,16 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
     <div class="move-sheet-title" id="moveTitle">場所を移動</div>
     <div class="move-sheet-sub" id="moveSub">移動先を選んでください</div>
     <div class="move-loc-grid" id="moveChips"></div>
+    <div class="move-qty-section" id="moveQtySection">
+      <div class="move-qty-label">何個移動しますか？</div>
+      <div class="move-qty-row">
+        <div class="vicb" onclick="changeMoveQty(-1)">−</div>
+        <div class="move-qty-num" id="moveQtyNum">1</div>
+        <div class="vicb" onclick="changeMoveQty(1)">＋</div>
+        <span style="font-size:13px;color:#888">個</span>
+      </div>
+      <div class="move-qty-max" id="moveQtyMax"></div>
+    </div>
     <button class="move-confirm-btn" id="moveConfirmBtn" disabled onclick="doMove()">移動する</button>
     <button class="move-cancel-btn" onclick="closeMoveSheet()">キャンセル</button>
   </div>
@@ -628,7 +643,7 @@ async function uv(id, vi, d) {
 }
 
 // ===== 場所移動 =====
-let moveState = {itemId: null, vi: null, destLoc: null};
+let moveState = {itemId: null, vi: null, destLoc: null, moveQty: 1, currentCount: 0};
 
 function openMoveSheet(id, vi) {
   const it = items.find(i => i.id === id);
@@ -636,12 +651,15 @@ function openMoveSheet(id, vi) {
   const vars = it.variants ? [...it.variants] : getVars(it).map(v=>({...v}));
   const v = vars[vi];
   if(!v) return;
-  moveState = {itemId: id, vi, destLoc: null};
+  const currentCount = v.count || 0;
+  moveState = {itemId: id, vi, destLoc: null, moveQty: 1, currentCount};
   const currentLoc = v.loc || v.name || '';
   const label = v.note ? v.note : currentLoc;
   document.getElementById('moveTitle').textContent = '「' + label + '」を移動';
   document.getElementById('moveSub').textContent = currentLoc + ' → どこへ移動しますか？';
   document.getElementById('moveConfirmBtn').disabled = true;
+  document.getElementById('moveQtySection').style.display = 'none';
+  document.getElementById('moveQtyNum').textContent = '1';
   document.getElementById('moveChips').innerHTML = LOC_NAMES.map(loc => {
     const isCurrent = loc === currentLoc;
     return `<div class="move-chip${isCurrent?' disabled':''}" id="mchip-${loc}" onclick="selectMoveDest('${loc}')">
@@ -660,24 +678,44 @@ function selectMoveDest(loc) {
     chip.classList.add('selected');
     document.getElementById('mcheck-'+loc).textContent = '✓ 移動先';
     moveState.destLoc = loc;
+    moveState.moveQty = 1;
+    document.getElementById('moveQtyNum').textContent = '1';
+    document.getElementById('moveQtyMax').textContent = '在庫：' + moveState.currentCount + '個（最大）';
+    document.getElementById('moveQtySection').style.display = 'block';
     document.getElementById('moveConfirmBtn').disabled = false;
   }
 }
 
+function changeMoveQty(d) {
+  moveState.moveQty = Math.min(moveState.currentCount, Math.max(1, moveState.moveQty + d));
+  document.getElementById('moveQtyNum').textContent = moveState.moveQty;
+}
+
 async function doMove() {
-  const {itemId, vi, destLoc} = moveState;
+  const {itemId, vi, destLoc, moveQty} = moveState;
   if(!itemId || vi === null || !destLoc) return;
   const it = items.find(i => i.id === itemId);
   if(!it) return;
-  const vars = it.variants ? [...it.variants] : getVars(it).map(v=>({...v}));
+  const vars = it.variants ? it.variants.map(v=>({...v})) : getVars(it).map(v=>({...v}));
   if(!vars[vi]) return;
   const fromLoc = vars[vi].loc || vars[vi].name || '';
-  vars[vi].loc = destLoc;
-  if(vars[vi].name && LOC_NAMES.includes(vars[vi].name)) vars[vi].name = destLoc;
+  const srcNote = vars[vi].note || '';
+
+  // ソースの個数を減らす
+  vars[vi].count = Math.max(0, (vars[vi].count||0) - moveQty);
+
+  // 移動先に同じ備考のエントリーがあれば加算、なければ新規追加
+  const existIdx = vars.findIndex((v, idx) => idx !== vi && (v.loc || v.name) === destLoc && (v.note||'') === srcNote);
+  if(existIdx >= 0) {
+    vars[existIdx].count = (vars[existIdx].count||0) + moveQty;
+  } else {
+    vars.push({loc: destLoc, note: srcNote, count: moveQty});
+  }
+
   closeMoveSheet();
   try {
     await col.doc(itemId).update({variants: vars});
-    showMoveToast(fromLoc + ' → ' + destLoc + ' に移動したおいっす！');
+    showMoveToast(fromLoc + ' → ' + destLoc + ' に ' + moveQty + '個 移動したおいっす！');
   } catch(e) {
     alert('移動に失敗したおいっす: ' + e.message);
   }
