@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>だがし在庫管理</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#222;min-height:100vh}
+
+/* ===== モバイルレイアウト（デフォルト） ===== */
+.app-shell{max-width:480px;margin:0 auto;padding:0.75rem;min-height:100vh}
+.app-header{font-size:18px;font-weight:500;margin-bottom:1rem}
+.tab-bar{display:flex;gap:6px;margin-bottom:1rem}
+.tab{flex:1;padding:8px 4px;font-size:13px;border:1px solid #ccc;border-radius:8px;background:#fff;color:#888;cursor:pointer;text-align:center;transition:all .15s}
+.tab.active{background:#eee;color:#222;font-weight:500;border-color:#999}
+.tab:hover:not(.active){background:#fafafa;color:#555}
+.section{display:none}.section.active{display:block}
+
+/* ===== PCレイアウト（768px以上） ===== */
+@media(min-width:768px){
+  body{display:flex;flex-direction:column}
+  .app-shell{max-width:100%;padding:0;display:flex;flex-direction:column;height:100vh}
+  .app-header{
+    padding:1rem 1.5rem;
+    font-size:20px;
+    border-bottom:1px solid #e0e0e0;
+    background:#fff;
+    margin-bottom:0;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+  }
+  .main-body{display:flex;flex:1;overflow:hidden}
+  .sidebar{
+    width:160px;
+    flex-shrink:0;
+    background:#fff;
+    border-right:1px solid #e0e0e0;
+    padding:1rem 0.75rem;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .tab-bar{display:none}
+  .sidebar .tab{
+    flex:none;
+    width:100%;
+    padding:10px 12px;
+    font-size:14px;
+    border-radius:8px;
+    text-align:left;
+  }
+  .content-area{
+    flex:1;
+    overflow-y:auto;
+    padding:1.5rem;
+    background:#f5f5f0;
+  }
+  /* PC：登録フォームを2カラム */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .form-col{display:flex;flex-direction:column;gap:0}
+  .form-full{grid-column:1/-1}
+  /* PC：一覧をグリッド */
+  #il{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:0.75rem}
+  /* PC：チェックをグリッド */
+  #cl{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:0.75rem}
+}
+
+/* ===== 共通カードスタイル ===== */
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:1rem 1.25rem;margin-bottom:0.75rem}
+@media(min-width:768px){.card{margin-bottom:0}}
+.lbl{font-size:12px;color:#888;margin-bottom:4px}
+.img-upload{border:1px dashed #bbb;border-radius:8px;padding:1.5rem;text-align:center;cursor:pointer;color:#888;font-size:13px;position:relative;overflow:hidden;transition:border-color .15s}
+.img-upload:hover{border-color:#999}
+.img-upload input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.img-upload img{max-width:100%;max-height:120px;object-fit:contain;border-radius:8px}
+input[type=text],select{width:100%;margin-bottom:0.75rem;padding:8px 10px;border:1px solid #ccc;border-radius:8px;font-size:14px;background:#fff;color:#222;transition:border-color .15s}
+input[type=text]:focus,select:focus{outline:none;border-color:#888}
+.loc-row{display:flex;gap:6px;margin-bottom:4px}
+.loc-row2{display:flex;gap:6px;margin-bottom:0.75rem}
+.loc-btn{flex:1;padding:8px;font-size:12px;border:1px solid #ccc;border-radius:8px;background:#fff;color:#888;cursor:pointer;text-align:center;transition:all .15s}
+.loc-btn:hover{background:#f5f5f5}
+.loc-btn.active{background:#e8f0fe;color:#1a56db;border-color:#1a56db;font-weight:500}
+.loc-btn.kactive{background:#e8fef0;color:#057a55;border-color:#057a55;font-weight:500}
+.cnt-row{display:flex;align-items:center;gap:10px;margin-bottom:0.75rem}
+.cnt-row label{font-size:13px;color:#888;flex:1}
+.cnt-ctrl{display:flex;align-items:center;gap:8px}
+.cnt-btn{width:36px;height:36px;border:1px solid #ccc;border-radius:8px;background:#f0f0f0;color:#222;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;user-select:none}
+.cnt-btn:hover{background:#e0e0e0}
+.cnt-num{min-width:28px;text-align:center;font-size:16px;font-weight:500}
+.mic-btn{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;background:#f5f5f5;color:#888;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:0.75rem;transition:all .15s}
+.mic-btn:hover{background:#eee}
+.mic-btn.rec{background:#fef2f2;color:#dc2626;border-color:#dc2626;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.save-btn{width:100%;padding:12px;border-radius:8px;background:#222;border:none;color:#fff;font-size:15px;font-weight:500;cursor:pointer;transition:background .15s;margin-top:0.5rem}
+.save-btn:hover{background:#444}
+@media(min-width:768px){.save-btn{max-width:320px}}
+
+/* ===== 一覧 ===== */
+.item-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:0.75rem 1rem;display:flex;gap:10px;align-items:flex-start}
+.thumb{width:54px;height:54px;border-radius:8px;flex-shrink:0;background:#f5f5f5;border:1px solid #e0e0e0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:22px}
+.thumb img{width:54px;height:54px;object-fit:cover}
+.iinfo{flex:1;min-width:0}
+.iname{font-size:14px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icat{font-size:12px;color:#888;margin-bottom:4px}
+.badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px}
+.bdg{font-size:11px;padding:2px 7px;border-radius:20px;border:1px solid #e0e0e0}
+.bdg.sh{background:#e8f0fe;color:#1a56db}
+.bdg.ky{background:#e8fef0;color:#057a55}
+.bdg.tt{background:#f5f5f5;color:#666}
+.sedit{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.sedit>span{font-size:11px;color:#888;margin-left:2px}
+.icnt{display:flex;align-items:center;gap:3px}
+.icb{width:24px;height:24px;border:1px solid #ccc;border-radius:6px;background:#f0f0f0;color:#222;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .1s;user-select:none}
+.icb:hover{background:#e0e0e0}
+.icn{min-width:18px;text-align:center;font-size:12px;font-weight:500}
+.chips{display:flex;gap:5px;margin-bottom:0.75rem;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.chip{padding:5px 12px;border-radius:20px;border:1px solid #ccc;background:#fff;color:#888;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.chip.active{background:#f0f0f0;color:#222;font-weight:500;border-color:#999}
+.chip:hover:not(.active){background:#fafafa;color:#555}
+.empty{text-align:center;color:#aaa;font-size:13px;padding:2rem 0}
+
+/* ===== チェック ===== */
+.ck-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:0.75rem 1rem;margin-bottom:0.5rem}
+@media(min-width:768px){.ck-card{margin-bottom:0}}
+.ck-cat{font-size:12px;font-weight:500;color:#888;margin-bottom:6px}
+.ck-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0}
+.ck-row:last-child{border-bottom:none}
+.ck-th{width:32px;height:32px;border-radius:6px;overflow:hidden;flex-shrink:0;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:16px}
+.ck-th img{width:32px;height:32px;object-fit:cover}
+.ck-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ck-sub{font-size:10px;color:#888}
+.ck-tot{font-size:15px;font-weight:500;flex-shrink:0;margin-left:auto;padding-left:8px}
+.zero{color:#dc2626}
+
+/* ===== スクロールバー ===== */
+@media(min-width:768px){
+  .content-area::-webkit-scrollbar{width:6px}
+  .content-area::-webkit-scrollbar-track{background:transparent}
+  .content-area::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="app-header">🍬 だがし在庫管理</div>
+
+  <!-- モバイル用タブバー -->
+  <div class="tab-bar">
+    <div class="tab active" onclick="sw('add')">＋ 登録</div>
+    <div class="tab" onclick="sw('list')">一覧</div>
+    <div class="tab" onclick="sw('check')">チェック</div>
+  </div>
+
+  <div class="main-body">
+    <!-- PCサイドバー -->
+    <div class="sidebar">
+      <div class="tab active" onclick="sw('add')">＋ 登録</div>
+      <div class="tab" onclick="sw('list')">📦 一覧</div>
+      <div class="tab" onclick="sw('check')">✅ チェック</div>
+    </div>
+
+    <!-- コンテンツエリア -->
+    <div class="content-area">
+
+      <!-- ===== 登録タブ ===== -->
+      <div id="tab-add" class="section active">
+        <div class="form-grid">
+          <div class="form-col">
+            <div class="card">
+              <div class="lbl">写真</div>
+              <div class="img-upload">
+                <input type="file" accept="image/*" capture="environment" id="ii" onchange="prevImg(this)">
+                <span id="ip">📷 タップして撮影 / 選択</span>
+                <img id="iv" style="display:none">
+              </div>
+            </div>
+            <div class="card">
+              <div class="lbl">商品名</div>
+              <div class="mic-btn" id="mb" onclick="mic()">🎤 <span id="ml">音声で入力</span></div>
+              <input type="text" id="nm" placeholder="または手入力">
+              <div class="lbl">カテゴリ</div>
+              <select id="ct">
+                <option>おめん</option><option>おもちゃ</option><option>シュシュ</option>
+                <option>花火</option><option>かざ車</option><option>おとこのこぶき</option>
+                <option>おんなのこぶき</option><option>その他</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-col">
+            <div class="card">
+              <div class="lbl">場所</div>
+              <div class="loc-row"><div class="loc-btn active" id="l-sh" onclick="setL('sh')">渋谷</div></div>
+              <div class="loc-row2">
+                <div class="loc-btn" id="l-shin" onclick="setL('shin')">新町</div>
+                <div class="loc-btn" id="l-dema" onclick="setL('dema')">出町柳</div>
+                <div class="loc-btn" id="l-maru" onclick="setL('maru')">円町</div>
+              </div>
+              <div class="lbl">在庫数</div>
+              <div class="cnt-row">
+                <label>数量</label>
+                <div class="cnt-ctrl">
+                  <div class="cnt-btn" onclick="chg(-1)">−</div>
+                  <div class="cnt-num" id="cd">0</div>
+                  <div class="cnt-btn" onclick="chg(1)">＋</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="save-btn" onclick="save()">保存する</button>
+      </div>
+
+      <!-- ===== 一覧タブ ===== -->
+      <div id="tab-list" class="section">
+        <div class="chips">
+          <div class="chip active" onclick="filt('all',this)">すべて</div>
+          <div class="chip" onclick="filt('おめん',this)">おめん</div>
+          <div class="chip" onclick="filt('おもちゃ',this)">おもちゃ</div>
+          <div class="chip" onclick="filt('シュシュ',this)">シュシュ</div>
+          <div class="chip" onclick="filt('花火',this)">花火</div>
+          <div class="chip" onclick="filt('かざ車',this)">かざ車</div>
+          <div class="chip" onclick="filt('おとこのこぶき',this)">おとこぶき</div>
+          <div class="chip" onclick="filt('おんなのこぶき',this)">おんなぶき</div>
+        </div>
+        <div id="il"></div>
+      </div>
+
+      <!-- ===== チェックタブ ===== -->
+      <div id="tab-check" class="section">
+        <div class="ck-card" style="margin-bottom:0.75rem">
+          <p style="font-size:13px;color:#888">イベント前チェックリスト — 全拠点の合計在庫</p>
+        </div>
+        <div id="cl"></div>
+      </div>
+
+    </div><!-- /content-area -->
+  </div><!-- /main-body -->
+</div><!-- /app-shell -->
+
+<script>
+const LOCS={sh:'渋谷',shin:'新町',dema:'出町柳',maru:'円町'};
+const LK=Object.keys(LOCS);
+let items=JSON.parse(localStorage.getItem('dg3')||'[]'),cnt=0,loc='sh',cf='all',img=null,rec=null;
+
+function sw(n){
+  // モバイルタブバー（.tab-bar内）とサイドバー（.sidebar内）両方を更新
+  document.querySelectorAll('.tab').forEach(t=>{
+    const tabs=['add','list','check'];
+    const labels=['＋ 登録','一覧','チェック'];
+    tabs.forEach((tab,i)=>{
+      if(t.textContent.replace(/📦|✅|\s/g,'').trim()===labels[i].trim()||
+         t.getAttribute('onclick')==="sw('"+tab+"')"){
+        t.classList.toggle('active',tab===n);
+      }
+    });
+  });
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+n).classList.add('active');
+  if(n==='list')rl();
+  if(n==='check')rc();
+}
+
+function prevImg(i){
+  if(!i.files[0])return;
+  const r=new FileReader();
+  r.onload=e=>{
+    img=e.target.result;
+    document.getElementById('iv').src=img;
+    document.getElementById('iv').style.display='block';
+    document.getElementById('ip').style.display='none';
+  };
+  r.readAsDataURL(i.files[0]);
+}
+
+function mic(){
+  const b=document.getElementById('mb'),l=document.getElementById('ml');
+  if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){
+    alert('このブラウザは音声入力に対応していません');return;
+  }
+  if(rec){rec.stop();rec=null;b.classList.remove('rec');l.textContent='音声で入力';return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  rec=new SR();rec.lang='ja-JP';
+  rec.onresult=e=>{document.getElementById('nm').value=e.results[0][0].transcript;};
+  rec.onend=()=>{rec=null;b.classList.remove('rec');l.textContent='音声で入力';};
+  rec.start();b.classList.add('rec');l.textContent='聞いてるよ...';
+}
+
+function chg(d){cnt=Math.max(0,cnt+d);document.getElementById('cd').textContent=cnt;}
+
+function setL(l){
+  loc=l;
+  LK.forEach(k=>{
+    const el=document.getElementById('l-'+k);if(!el)return;
+    el.classList.remove('active','kactive');
+    if(k===l)el.classList.add(k==='sh'?'active':'kactive');
+  });
+}
+
+function save(){
+  const n=document.getElementById('nm').value.trim();
+  if(!n){alert('商品名を入力してください');return;}
+  const st={sh:0,shin:0,dema:0,maru:0};st[loc]=cnt;
+  items.push({id:Date.now(),name:n,cat:document.getElementById('ct').value,img,...st});
+  localStorage.setItem('dg3',JSON.stringify(items));
+  document.getElementById('nm').value='';
+  document.getElementById('iv').style.display='none';
+  document.getElementById('ip').style.display='';
+  document.getElementById('ii').value='';
+  img=null;cnt=0;document.getElementById('cd').textContent='0';
+  alert(n+' を保存したおいっす！');
+}
+
+function filt(f,el){
+  cf=f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');rl();
+}
+
+function rl(){
+  const el=document.getElementById('il');
+  const fl=cf==='all'?items:items.filter(i=>i.cat===cf);
+  if(!fl.length){el.innerHTML='<div class="empty">まだ登録がないおいっす</div>';return;}
+  el.innerHTML=fl.map(it=>{
+    const tot=LK.reduce((s,k)=>s+(it[k]||0),0);
+    const bdg=
+      `<span class="bdg sh">渋谷 <b id="b-sh-${it.id}">${it.sh||0}</b></span>`+
+      ['shin','dema','maru'].map(k=>`<span class="bdg ky">${LOCS[k]} <b id="b-${k}-${it.id}">${it[k]||0}</b></span>`).join('')+
+      `<span class="bdg tt">計 <b id="bt-${it.id}">${tot}</b></span>`;
+    const edt=LK.map(k=>
+      `<span>${LOCS[k]}</span><div class="icnt"><div class="icb" onclick="us(${it.id},'${k}',-1)">−</div><div class="icn" id="e-${k}-${it.id}">${it[k]||0}</div><div class="icb" onclick="us(${it.id},'${k}',1)">＋</div></div>`
+    ).join('');
+    return `<div class="item-card">
+      <div class="thumb">${it.img?`<img src="${it.img}" alt="${it.name}">`:'📦'}</div>
+      <div class="iinfo">
+        <div class="iname">${it.name}</div>
+        <div class="icat">${it.cat}</div>
+        <div class="badges">${bdg}</div>
+        <div class="sedit">${edt}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function us(id,k,d){
+  const it=items.find(i=>i.id===id);if(!it)return;
+  it[k]=Math.max(0,(it[k]||0)+d);
+  localStorage.setItem('dg3',JSON.stringify(items));
+  const eb=document.getElementById('e-'+k+'-'+id),bb=document.getElementById('b-'+k+'-'+id);
+  if(eb)eb.textContent=it[k];if(bb)bb.textContent=it[k];
+  const tot=LK.reduce((s,kk)=>s+(it[kk]||0),0);
+  const tb=document.getElementById('bt-'+id);if(tb)tb.textContent=tot;
+}
+
+function rc(){
+  const el=document.getElementById('cl');
+  if(!items.length){el.innerHTML='<div class="empty">在庫がまだ登録されていないおいっす</div>';return;}
+  const cats=[...new Set(items.map(i=>i.cat))];
+  el.innerHTML=cats.map(cat=>{
+    const rows=items.filter(i=>i.cat===cat).map(it=>{
+      const tot=LK.reduce((s,k)=>s+(it[k]||0),0);
+      return `<div class="ck-row">
+        <div class="ck-th">${it.img?`<img src="${it.img}">`:'📦'}</div>
+        <div style="flex:1;min-width:0">
+          <div class="ck-name">${it.name}</div>
+          <div class="ck-sub">${LK.map(k=>LOCS[k]+' '+(it[k]||0)).join(' / ')}</div>
+        </div>
+        <div class="ck-tot${tot===0?' zero':''}">${tot}</div>
+      </div>`;
+    }).join('');
+    return `<div class="ck-card"><div class="ck-cat">${cat}</div>${rows}</div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
