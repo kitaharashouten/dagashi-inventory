@@ -67,6 +67,9 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .var-num{min-width:24px;text-align:center;font-size:14px;font-weight:500}
 .var-del{width:28px;height:28px;border:none;border-radius:6px;background:transparent;color:#ccc;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .var-del:hover{color:#dc2626;background:#fef2f2}
+.var-mic{width:28px;height:28px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;color:#888;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.var-mic:hover{background:#e8f0fe;color:#1a73e8;border-color:#1a73e8}
+.var-mic.rec{background:#fef2f2;color:#dc2626;border-color:#dc2626;animation:pulse 1s infinite}
 .add-var-btn{width:100%;padding:8px;border:1px dashed #bbb;border-radius:8px;background:#fff;color:#888;cursor:pointer;font-size:13px;text-align:center;margin-bottom:0.75rem}
 .add-var-btn:hover{border-color:#888;color:#444}
 
@@ -275,6 +278,7 @@ function renderFormVars() {
   const el = document.getElementById('varList');
   el.innerHTML = formVars.map((v, i) => `
     <div class="var-row">
+      <button class="var-mic" id="vm-${i}" onclick="micVar(${i})" title="音声入力（例：みどり 3）">🎤</button>
       <input class="var-name" type="text" placeholder="色・種類（例：緑）" value="${v.name}"
         oninput="formVars[${i}].name=this.value">
       <div class="var-ctrl">
@@ -284,6 +288,49 @@ function renderFormVars() {
       </div>
       <button class="var-del" onclick="delVar(${i})" title="削除">✕</button>
     </div>`).join('');
+}
+
+let varRec = null, varRecIdx = -1;
+function micVar(i) {
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
+    alert('このブラウザは音声入力に対応していません'); return;
+  }
+  // 別のバリエーションのマイクが動いてたら止める
+  if(varRec) { varRec.stop(); varRec = null; }
+  const btn = document.getElementById('vm-'+i);
+  if(varRecIdx === i && btn && !btn.classList.contains('rec')) {
+    // already stopped
+  }
+  varRecIdx = i;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  varRec = new SR(); varRec.lang = 'ja-JP';
+  varRec.onresult = e => {
+    const txt = e.results[0][0].transcript.trim();
+    // 末尾の数字を抽出（「みどり 3」→ name=みどり, count=3）
+    const m = txt.match(/^(.+?)\s+(\d+)$/) || txt.match(/^(\d+)\s+(.+?)$/);
+    if(m) {
+      const name = isNaN(m[1]) ? m[1].trim() : m[2].trim();
+      const count = parseInt(isNaN(m[1]) ? m[2] : m[1]);
+      formVars[i].name = name;
+      formVars[i].count = Math.max(0, count);
+    } else {
+      // 数字だけなら個数、そうでなければ名前
+      const num = parseInt(txt);
+      if(!isNaN(num) && txt.match(/^\d+$/)) {
+        formVars[i].count = Math.max(0, num);
+      } else {
+        formVars[i].name = txt;
+      }
+    }
+    renderFormVars();
+  };
+  varRec.onend = () => {
+    varRec = null; varRecIdx = -1;
+    const b = document.getElementById('vm-'+i);
+    if(b) b.classList.remove('rec');
+  };
+  varRec.start();
+  if(btn) btn.classList.add('rec');
 }
 
 function addVar() {
