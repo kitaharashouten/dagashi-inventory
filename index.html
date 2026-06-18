@@ -55,7 +55,14 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .save-btn{width:100%;padding:12px;border-radius:8px;background:#222;border:none;color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-top:0.5rem}
 .save-btn:hover{background:#444}
 .save-btn:disabled{background:#aaa;cursor:not-allowed}
-@media(min-width:768px){.save-btn{max-width:320px}}
+.cancel-btn{width:100%;padding:10px;border-radius:8px;background:#fff;border:1px solid #ccc;color:#888;font-size:14px;cursor:pointer;margin-top:0.5rem}
+.cancel-btn:hover{background:#f5f5f5;color:#444}
+@media(min-width:768px){.save-btn,.cancel-btn{max-width:320px}}
+.item-actions{display:flex;gap:6px;margin-top:8px}
+.edit-btn{padding:5px 12px;border-radius:6px;border:1px solid #ccc;background:#f5f5f5;color:#555;font-size:12px;cursor:pointer}
+.edit-btn:hover{background:#e8f0fe;color:#1a73e8;border-color:#1a73e8}
+.del-btn{padding:5px 12px;border-radius:6px;border:1px solid #fcc;background:#fff5f5;color:#dc2626;font-size:12px;cursor:pointer}
+.del-btn:hover{background:#fef2f2;border-color:#dc2626}
 
 /* ===== バリエーション入力 ===== */
 .var-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
@@ -165,6 +172,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
           </div>
         </div>
         <button class="save-btn" id="saveBtn" onclick="save()">保存する</button>
+        <button class="cancel-btn" id="cancelEditBtn" onclick="resetForm()" style="display:none">✕ キャンセル</button>
       </div>
 
       <!-- 一覧タブ -->
@@ -210,6 +218,7 @@ const col = db.collection('items');
 let items = [], img = null, rec = null, curTab = 'add', cf = 'all';
 // 登録フォームのバリエーションリスト
 let formVars = []; // [{name:'', count:0}]
+let editingId = null; // 編集中のアイテムID（nullなら新規）
 
 // ===== リアルタイム同期 =====
 col.orderBy('createdAt','asc').onSnapshot(snap => {
@@ -351,37 +360,78 @@ function fvc(i, d) {
 // 初期バリエーション1つ用意
 addVar();
 
-// ===== 保存 =====
+// ===== 保存 / 更新 =====
 async function save() {
   const n = document.getElementById('nm').value.trim();
   if(!n){ alert('商品名を入力してください'); return; }
-  // 名前が空のバリエーションは除外
   const vars = formVars.filter(v => v.name.trim() !== '').map(v => ({name: v.name.trim(), count: v.count}));
   const btn = document.getElementById('saveBtn');
-  btn.disabled = true; btn.textContent = '保存中...';
+  const isEdit = !!editingId;
+  btn.disabled = true; btn.textContent = isEdit ? '更新中...' : '保存中...';
   try {
-    await col.add({
+    const data = {
       name: n,
       cat: document.getElementById('ct').value,
-      img: img || null,
-      variants: vars,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    // リセット
-    document.getElementById('nm').value = '';
-    const iv = document.getElementById('iv');
-    iv.style.display = 'none'; iv.src = '';
-    document.getElementById('ip').style.display = '';
-    document.getElementById('ii').value = '';
-    img = null;
-    formVars = [];
-    addVar();
-    alert(n + ' を保存したおいっす！');
+      variants: vars
+    };
+    if(img) data.img = img; // 画像が差し替えられた場合のみ更新
+    if(isEdit) {
+      await col.doc(editingId).update(data);
+      alert(n + ' を更新したおいっす！');
+    } else {
+      data.img = img || null;
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await col.add(data);
+      alert(n + ' を保存したおいっす！');
+    }
+    resetForm();
   } catch(e) {
-    alert('保存に失敗したおいっす: ' + e.message);
+    alert('失敗したおいっす: ' + e.message);
   } finally {
-    btn.disabled = false; btn.textContent = '保存する';
+    btn.disabled = false;
+    btn.textContent = editingId ? '更新する' : '保存する';
   }
+}
+
+function resetForm() {
+  editingId = null;
+  document.getElementById('nm').value = '';
+  const iv = document.getElementById('iv');
+  iv.style.display = 'none'; iv.src = '';
+  document.getElementById('ip').style.display = '';
+  document.getElementById('ii').value = '';
+  img = null;
+  formVars = [];
+  addVar();
+  document.getElementById('saveBtn').textContent = '保存する';
+  const cb = document.getElementById('cancelEditBtn');
+  if(cb) cb.style.display = 'none';
+}
+
+function editItem(id) {
+  const it = items.find(i => i.id === id);
+  if(!it) return;
+  editingId = id;
+  // フォームに値をセット
+  document.getElementById('nm').value = it.name || '';
+  const ct = document.getElementById('ct');
+  if(it.cat) ct.value = it.cat;
+  // 画像
+  img = it.img || null;
+  const iv = document.getElementById('iv');
+  if(it.img){ iv.src = it.img; iv.style.display = 'block'; document.getElementById('ip').style.display = 'none'; }
+  else { iv.style.display = 'none'; document.getElementById('ip').style.display = ''; }
+  // バリエーション
+  formVars = getVars(it).map(v => ({name: v.name, count: v.count||0}));
+  if(!formVars.length) formVars = [{name:'', count:0}];
+  renderFormVars();
+  // ボタン表示変更
+  document.getElementById('saveBtn').textContent = '更新する';
+  const cb = document.getElementById('cancelEditBtn');
+  if(cb) cb.style.display = 'block';
+  // 登録タブに切り替え
+  sw('add');
+  window.scrollTo(0, 0);
 }
 
 // ===== 一覧 =====
@@ -428,9 +478,25 @@ function rl() {
         <div class="icat">${it.cat}</div>
         <div class="vbadges">${badges}</div>
         <div class="vedit">${editRows}</div>
+        <div class="item-actions">
+          <button class="edit-btn" onclick="editItem('${it.id}')">✏️ 編集</button>
+          <button class="del-btn" onclick="deleteItem('${it.id}')">🗑️ 削除</button>
+        </div>
       </div>
     </div>`;
   }).join('');
+}
+
+// ===== 削除 =====
+async function deleteItem(id) {
+  const it = items.find(i => i.id === id);
+  const name = it ? it.name : 'この商品';
+  if(!confirm(name + ' を削除しますか？')) return;
+  try {
+    await col.doc(id).delete();
+  } catch(e) {
+    alert('削除に失敗したおいっす: ' + e.message);
+  }
 }
 
 // ===== バリエーション在庫更新 =====
