@@ -64,6 +64,15 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .del-btn{padding:5px 12px;border-radius:6px;border:1px solid #fcc;background:#fff5f5;color:#dc2626;font-size:12px;cursor:pointer}
 .del-btn:hover{background:#fef2f2;border-color:#dc2626}
 
+/* ===== 場所選択 ===== */
+.loc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.loc-chip{border:2px solid #e0e0e0;border-radius:10px;padding:8px 10px;background:#f9f9f9;transition:all .15s}
+.loc-chip.active{border-color:#4caf50;background:#f0faf0}
+.loc-chip-name{font-size:13px;font-weight:500;color:#555;margin-bottom:6px;text-align:center}
+.loc-chip.active .loc-chip-name{color:#2e7d32}
+.loc-ctrl{display:flex;align-items:center;justify-content:center;gap:6px}
+.loc-num{min-width:24px;text-align:center;font-size:15px;font-weight:600}
+
 /* ===== バリエーション入力 ===== */
 .var-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
 .var-row{display:flex;align-items:center;gap:6px}
@@ -165,6 +174,10 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
           </div>
           <div class="form-col">
             <div class="card">
+              <div class="lbl">場所</div>
+              <div class="loc-grid" id="locList"></div>
+            </div>
+            <div class="card">
               <div class="lbl">バリエーション（色・種類など）</div>
               <div class="var-list" id="varList"></div>
               <div class="add-var-btn" onclick="addVar()">＋ バリエーション追加</div>
@@ -216,9 +229,10 @@ const db = firebase.firestore();
 const col = db.collection('items');
 
 let items = [], img = null, rec = null, curTab = 'add', cf = 'all';
-// 登録フォームのバリエーションリスト
-let formVars = []; // [{name:'', count:0}]
-let editingId = null; // 編集中のアイテムID（nullなら新規）
+let formVars = []; // カスタムバリエーション [{name:'', count:0}]
+let editingId = null;
+const LOC_NAMES = ['渋谷', '出町柳', '新町御池', '円町'];
+let locCounts = {}; // 場所カウント {渋谷:0, ...}
 
 // ===== リアルタイム同期 =====
 col.orderBy('createdAt','asc').onSnapshot(snap => {
@@ -364,23 +378,47 @@ function fvc(i, d) {
   document.getElementById('fvn-'+i).textContent = formVars[i].count;
 }
 
-// 初期バリエーション：拠点4つをデフォルトで用意
+// ===== 場所選択 =====
+function initLocs(preset) {
+  LOC_NAMES.forEach(n => { locCounts[n] = (preset && preset[n]) || 0; });
+  renderLocs();
+}
+function renderLocs() {
+  const el = document.getElementById('locList');
+  el.innerHTML = LOC_NAMES.map(loc => `
+    <div class="loc-chip${locCounts[loc]>0?' active':''}" id="lchip-${loc}">
+      <div class="loc-chip-name">${loc}</div>
+      <div class="loc-ctrl">
+        <div class="var-btn" onclick="lvc('${loc}',-1)">−</div>
+        <div class="loc-num" id="ln-${loc}">${locCounts[loc]}</div>
+        <div class="var-btn" onclick="lvc('${loc}',1)">＋</div>
+      </div>
+    </div>`).join('');
+}
+function lvc(loc, d) {
+  locCounts[loc] = Math.max(0, (locCounts[loc]||0) + d);
+  const el = document.getElementById('ln-'+loc);
+  if(el) el.textContent = locCounts[loc];
+  const chip = document.getElementById('lchip-'+loc);
+  if(chip) chip.className = 'loc-chip' + (locCounts[loc]>0?' active':'');
+}
+
+// 初期バリエーション（カスタム：1行空欄）
 function initVars() {
-  formVars = [
-    {name:'渋谷', count:0},
-    {name:'出町柳', count:0},
-    {name:'新町御池', count:0},
-    {name:'円町', count:0}
-  ];
+  formVars = [{name:'', count:0}];
   renderFormVars();
 }
+initLocs();
 initVars();
 
 // ===== 保存 / 更新 =====
 async function save() {
   const n = document.getElementById('nm').value.trim();
   if(!n){ alert('商品名を入力してください'); return; }
-  const vars = formVars.filter(v => v.name.trim() !== '').map(v => ({name: v.name.trim(), count: v.count}));
+  // 場所（選択式）+ カスタムバリエーション を合わせる
+  const locVars = LOC_NAMES.filter(l => locCounts[l] > 0).map(l => ({name:l, count:locCounts[l]}));
+  const customVars = formVars.filter(v => v.name.trim() !== '').map(v => ({name:v.name.trim(), count:v.count}));
+  const vars = [...locVars, ...customVars];
   const btn = document.getElementById('saveBtn');
   const isEdit = !!editingId;
   btn.disabled = true; btn.textContent = isEdit ? '更新中...' : '保存中...';
@@ -417,6 +455,7 @@ function resetForm() {
   document.getElementById('ip').style.display = '';
   document.getElementById('ii').value = '';
   img = null;
+  initLocs();
   initVars();
   document.getElementById('saveBtn').textContent = '保存する';
   const cb = document.getElementById('cancelEditBtn');
@@ -436,9 +475,17 @@ function editItem(id) {
   const iv = document.getElementById('iv');
   if(it.img){ iv.src = it.img; iv.style.display = 'block'; document.getElementById('ip').style.display = 'none'; }
   else { iv.style.display = 'none'; document.getElementById('ip').style.display = ''; }
-  // バリエーション
-  formVars = getVars(it).map(v => ({name: v.name, count: v.count||0}));
-  if(!formVars.length) formVars = [{name:'', count:0}];
+  // バリエーション：場所とカスタムに分ける
+  const allVars = getVars(it);
+  const preset = {};
+  LOC_NAMES.forEach(n => { preset[n] = 0; });
+  const custom = [];
+  allVars.forEach(v => {
+    if(LOC_NAMES.includes(v.name)) preset[v.name] = v.count||0;
+    else custom.push({name:v.name, count:v.count||0});
+  });
+  initLocs(preset);
+  formVars = custom.length ? custom : [{name:'', count:0}];
   renderFormVars();
   // ボタン表示変更
   document.getElementById('saveBtn').textContent = '更新する';
