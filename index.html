@@ -64,7 +64,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .del-btn{padding:5px 12px;border-radius:6px;border:1px solid #fcc;background:#fff5f5;color:#dc2626;font-size:12px;cursor:pointer}
 .del-btn:hover{background:#fef2f2;border-color:#dc2626}
 
-/* ===== 場所選択チップ ===== */
+/* ===== 場所チップ ===== */
 .loc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .loc-chip{border:2px solid #e0e0e0;border-radius:10px;padding:10px 12px;background:#f9f9f9;cursor:pointer;text-align:center;transition:all .15s;user-select:none}
 .loc-chip:hover{border-color:#aaa}
@@ -73,17 +73,21 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .loc-chip.active .loc-chip-name{color:#2e7d32}
 .loc-chip-check{font-size:11px;color:#4caf50;margin-top:3px;min-height:15px}
 
-/* ===== 場所詳細（選択後に表示） ===== */
+/* ===== 場所詳細（エントリー複数） ===== */
 .loc-detail{border:1px solid #c8e6c9;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#f9fff9}
 .loc-detail-title{font-size:13px;font-weight:600;color:#2e7d32;margin-bottom:8px}
-.loc-detail-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-.loc-detail-lbl{font-size:12px;color:#888;min-width:28px;flex-shrink:0}
-.loc-note-input{flex:1;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:13px;background:#fff;color:#222;margin-bottom:0}
-.loc-note-input:focus{outline:none;border-color:#4caf50}
-.var-btn{width:30px;height:30px;border:1px solid #ccc;border-radius:6px;background:#f0f0f0;color:#222;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;flex-shrink:0}
+.loc-entry{display:flex;align-items:center;gap:5px;margin-bottom:6px}
+.loc-entry-note{flex:1;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:13px;background:#fff;color:#222;margin-bottom:0;min-width:0}
+.loc-entry-note:focus{outline:none;border-color:#4caf50}
+.loc-entry-ctrl{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.loc-entry-num{min-width:26px;text-align:center;font-size:14px;font-weight:600}
+.loc-entry-del{width:26px;height:26px;border:none;border-radius:6px;background:transparent;color:#ccc;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
+.loc-entry-del:hover{color:#dc2626;background:#fef2f2}
+.add-entry-btn{width:100%;padding:6px;border:1px dashed #bbb;border-radius:7px;background:#fff;color:#888;cursor:pointer;font-size:12px;text-align:center;margin-top:2px}
+.add-entry-btn:hover{border-color:#4caf50;color:#2e7d32}
+.var-btn{width:28px;height:28px;border:1px solid #ccc;border-radius:6px;background:#f0f0f0;color:#222;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;flex-shrink:0}
 .var-btn:hover{background:#e0e0e0}
-.var-num{min-width:28px;text-align:center;font-size:15px;font-weight:600}
-.var-mic{width:28px;height:28px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;color:#888;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.var-mic{width:26px;height:26px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;color:#888;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
 .var-mic:hover{background:#e8f0fe;color:#1a73e8;border-color:#1a73e8}
 .var-mic.rec{background:#fef2f2;color:#dc2626;border-color:#dc2626;animation:pulse 1s infinite}
 
@@ -99,7 +103,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .vbdg.tot{background:#fff3cd;color:#856404;border-color:#ffc107}
 .vedit{display:flex;flex-direction:column;gap:4px}
 .vedit-row{display:flex;align-items:center;gap:5px}
-.vedit-lbl{font-size:11px;color:#888;min-width:52px}
+.vedit-lbl{font-size:11px;color:#888;min-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px}
 .vicb{width:22px;height:22px;border:1px solid #ccc;border-radius:5px;background:#f0f0f0;color:#222;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;flex-shrink:0}
 .vicb:hover{background:#e0e0e0}
 .vicn{min-width:20px;text-align:center;font-size:12px;font-weight:500}
@@ -107,7 +111,6 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .chip{padding:5px 12px;border-radius:20px;border:1px solid #ccc;background:#fff;color:#888;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .chip.active{background:#f0f0f0;color:#222;font-weight:500;border-color:#999}
 .empty{text-align:center;color:#aaa;font-size:13px;padding:2rem 0}
-.vnote{font-size:10px;color:#888;font-style:italic}
 
 /* ===== チェック ===== */
 .ck-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:0.75rem 1rem;margin-bottom:0.5rem}
@@ -226,7 +229,8 @@ const col = db.collection('items');
 let items = [], img = null, rec = null, curTab = 'add', cf = 'all';
 let editingId = null;
 const LOC_NAMES = ['渋谷', '出町柳', '新町御池', '円町'];
-// locData: { '渋谷': { selected: false, count: 0, note: '' }, ... }
+
+// locData: { '渋谷': { selected: bool, entries: [{note:'', count:0}, ...] }, ... }
 let locData = {};
 
 // ===== リアルタイム同期 =====
@@ -277,7 +281,7 @@ function prevImg(i) {
   reader.readAsDataURL(i.files[0]);
 }
 
-// ===== 商品名音声入力 =====
+// ===== 商品名音声 =====
 function mic() {
   const b = document.getElementById('mb'), l = document.getElementById('ml');
   if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
@@ -291,14 +295,13 @@ function mic() {
   rec.start(); b.classList.add('rec'); l.textContent = '聞いてるよ...';
 }
 
-// ===== 場所選択 UI =====
+// ===== 場所 UI =====
 function initLocs(preset) {
   LOC_NAMES.forEach(n => {
     const p = preset && preset[n];
     locData[n] = {
       selected: p ? !!p.selected : false,
-      count:    p ? (p.count || 0) : 0,
-      note:     p ? (p.note  || '') : ''
+      entries:  p && p.entries && p.entries.length ? p.entries.map(e => ({note: e.note||'', count: e.count||0})) : [{note:'', count:0}]
     };
   });
   renderLocs();
@@ -306,36 +309,35 @@ function initLocs(preset) {
 
 function renderLocs() {
   // チップ
-  const chipEl = document.getElementById('locList');
-  chipEl.innerHTML = LOC_NAMES.map(loc => `
-    <div class="loc-chip${locData[loc].selected ? ' active' : ''}" onclick="toggleLoc('${loc}')">
+  document.getElementById('locList').innerHTML = LOC_NAMES.map(loc => `
+    <div class="loc-chip${locData[loc].selected?' active':''}" onclick="toggleLoc('${loc}')">
       <div class="loc-chip-name">${loc}</div>
       <div class="loc-chip-check">${locData[loc].selected ? '✓ 選択中' : ''}</div>
     </div>`).join('');
 
-  // 選択済みの場所の詳細フォーム
-  const detEl = document.getElementById('locDetails');
+  // 選択済みの詳細
   const selected = LOC_NAMES.filter(l => locData[l].selected);
-  if(!selected.length){ detEl.innerHTML = ''; return; }
-  detEl.innerHTML = selected.map(loc => {
-    const d = locData[loc];
+  document.getElementById('locDetails').innerHTML = selected.map(loc => {
+    const entries = locData[loc].entries;
+    const rows = entries.map((e, i) => `
+      <div class="loc-entry">
+        <button class="var-mic" id="lnm-${loc}-${i}" onclick="micEntryNote('${loc}',${i})" title="音声で備考">🎤</button>
+        <input class="loc-entry-note" type="text" placeholder="備考"
+          value="${e.note.replace(/"/g,'&quot;')}"
+          oninput="locData['${loc}'].entries[${i}].note=this.value">
+        <div class="loc-entry-ctrl">
+          <button class="var-mic" id="lcm-${loc}-${i}" onclick="micEntryCount('${loc}',${i})" title="音声で個数">🎤</button>
+          <div class="var-btn" onclick="entryCount('${loc}',${i},-1)">−</div>
+          <div class="loc-entry-num" id="len-${loc}-${i}">${e.count}</div>
+          <div class="var-btn" onclick="entryCount('${loc}',${i},1)">＋</div>
+        </div>
+        ${entries.length > 1 ? `<button class="loc-entry-del" onclick="delEntry('${loc}',${i})">✕</button>` : '<div style="width:26px"></div>'}
+      </div>`).join('');
     return `
     <div class="loc-detail">
       <div class="loc-detail-title">📍 ${loc}</div>
-      <div class="loc-detail-row">
-        <span class="loc-detail-lbl">備考</span>
-        <button class="var-mic" id="lnm-${loc}" onclick="micLocNote('${loc}')" title="音声で備考入力">🎤</button>
-        <input class="loc-note-input" type="text" id="ln-note-${loc}"
-          placeholder="備考（任意）" value="${d.note.replace(/"/g,'&quot;')}"
-          oninput="locData['${loc}'].note=this.value">
-      </div>
-      <div class="loc-detail-row">
-        <span class="loc-detail-lbl">個数</span>
-        <button class="var-mic" id="lcm-${loc}" onclick="micLocCount('${loc}')" title="音声で個数入力（例：5個）">🎤</button>
-        <div class="var-btn" onclick="locCountChange('${loc}',-1)">−</div>
-        <div class="var-num" id="ln-count-${loc}">${d.count}</div>
-        <div class="var-btn" onclick="locCountChange('${loc}',1)">＋</div>
-      </div>
+      ${rows}
+      <div class="add-entry-btn" onclick="addEntry('${loc}')">＋ 備考・個数を追加</div>
     </div>`;
   }).join('');
 }
@@ -345,48 +347,60 @@ function toggleLoc(loc) {
   renderLocs();
 }
 
-function locCountChange(loc, d) {
-  locData[loc].count = Math.max(0, (locData[loc].count || 0) + d);
-  const el = document.getElementById('ln-count-' + loc);
-  if(el) el.textContent = locData[loc].count;
+function addEntry(loc) {
+  locData[loc].entries.push({note:'', count:0});
+  renderLocs();
 }
 
-// ===== 場所：備考 音声入力 =====
-let locRec = null;
-function micLocNote(loc) {
+function delEntry(loc, i) {
+  locData[loc].entries.splice(i, 1);
+  if(!locData[loc].entries.length) locData[loc].entries = [{note:'', count:0}];
+  renderLocs();
+}
+
+function entryCount(loc, i, d) {
+  locData[loc].entries[i].count = Math.max(0, (locData[loc].entries[i].count||0) + d);
+  const el = document.getElementById('len-'+loc+'-'+i);
+  if(el) el.textContent = locData[loc].entries[i].count;
+}
+
+// ===== 音声：備考 =====
+let entryNoteRec = null;
+function micEntryNote(loc, i) {
   if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
     alert('このブラウザは音声入力に対応していません'); return;
   }
-  if(locRec){ locRec.stop(); locRec = null; }
+  if(entryNoteRec){ entryNoteRec.stop(); entryNoteRec = null; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  locRec = new SR(); locRec.lang = 'ja-JP';
-  const btn = document.getElementById('lnm-' + loc);
+  entryNoteRec = new SR(); entryNoteRec.lang = 'ja-JP';
+  const btn = document.getElementById('lnm-'+loc+'-'+i);
   if(btn) btn.classList.add('rec');
-  locRec.onresult = e => {
+  entryNoteRec.onresult = e => {
     const txt = e.results[0][0].transcript.trim();
-    locData[loc].note = txt;
-    const inp = document.getElementById('ln-note-' + loc);
+    locData[loc].entries[i].note = txt;
+    const inp = document.querySelector(`input[oninput*="'${loc}'].entries[${i}]"]`);
     if(inp) inp.value = txt;
+    else renderLocs();
   };
-  locRec.onend = () => {
-    locRec = null;
+  entryNoteRec.onend = () => {
+    entryNoteRec = null;
     if(btn) btn.classList.remove('rec');
   };
-  locRec.start();
+  entryNoteRec.start();
 }
 
-// ===== 場所：個数 音声入力 =====
-let locCountRec = null;
-function micLocCount(loc) {
+// ===== 音声：個数 =====
+let entryCountRec = null;
+function micEntryCount(loc, i) {
   if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
     alert('このブラウザは音声入力に対応していません'); return;
   }
-  if(locCountRec){ locCountRec.stop(); locCountRec = null; }
+  if(entryCountRec){ entryCountRec.stop(); entryCountRec = null; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  locCountRec = new SR(); locCountRec.lang = 'ja-JP';
-  const btn = document.getElementById('lcm-' + loc);
+  entryCountRec = new SR(); entryCountRec.lang = 'ja-JP';
+  const btn = document.getElementById('lcm-'+loc+'-'+i);
   if(btn) btn.classList.add('rec');
-  locCountRec.onresult = e => {
+  entryCountRec.onresult = e => {
     const txt = e.results[0][0].transcript.trim();
     const kanji = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'十一':11,'十二':12,'十三':13,'十四':14,'十五':15,'十六':16,'十七':17,'十八':18,'十九':19,'二十':20};
     let normalized = txt;
@@ -394,40 +408,43 @@ function micLocCount(loc) {
       normalized = normalized.replace(new RegExp(k,'g'), kanji[k]);
     });
     const m = normalized.match(/(\d+)/);
-    if(m){
-      locData[loc].count = parseInt(m[1]);
-      const el = document.getElementById('ln-count-' + loc);
-      if(el) el.textContent = locData[loc].count;
+    if(m) {
+      locData[loc].entries[i].count = parseInt(m[1]);
+      const el = document.getElementById('len-'+loc+'-'+i);
+      if(el) el.textContent = locData[loc].entries[i].count;
     }
   };
-  locCountRec.onend = () => {
-    locCountRec = null;
+  entryCountRec.onend = () => {
+    entryCountRec = null;
     if(btn) btn.classList.remove('rec');
   };
-  locCountRec.start();
+  entryCountRec.start();
 }
 
-// 初期化
 initLocs();
 
 // ===== 保存 / 更新 =====
 async function save() {
   const n = document.getElementById('nm').value.trim();
   if(!n){ alert('商品名を入力してください'); return; }
-  const vars = LOC_NAMES.filter(l => locData[l].selected).map(l => ({
-    name: l,
-    count: locData[l].count,
-    note: locData[l].note
-  }));
+  // 選択済み場所のエントリーをフラットに展開
+  const vars = [];
+  LOC_NAMES.filter(l => locData[l].selected).forEach(loc => {
+    locData[loc].entries.forEach(e => {
+      if(e.note.trim() || e.count > 0) {
+        vars.push({ loc: loc, note: e.note.trim(), count: e.count });
+      }
+    });
+    // エントリーが全て空でも場所だけ記録
+    if(!vars.find(v => v.loc === loc)) {
+      vars.push({ loc: loc, note: '', count: 0 });
+    }
+  });
   const btn = document.getElementById('saveBtn');
   const isEdit = !!editingId;
   btn.disabled = true; btn.textContent = isEdit ? '更新中...' : '保存中...';
   try {
-    const data = {
-      name: n,
-      cat: document.getElementById('ct').value,
-      variants: vars
-    };
+    const data = { name: n, cat: document.getElementById('ct').value, variants: vars };
     if(img) data.img = img;
     if(isEdit) {
       await col.doc(editingId).update(data);
@@ -472,12 +489,14 @@ function editItem(id) {
   const iv = document.getElementById('iv');
   if(it.img){ iv.src = it.img; iv.style.display = 'block'; document.getElementById('ip').style.display = 'none'; }
   else { iv.style.display = 'none'; document.getElementById('ip').style.display = ''; }
-  // 保存済みバリエーション → locData に復元
+  // 保存データ → locData に復元
   const preset = {};
   const allVars = getVars(it);
   allVars.forEach(v => {
-    if(LOC_NAMES.includes(v.name)){
-      preset[v.name] = { selected: true, count: v.count || 0, note: v.note || '' };
+    const loc = v.loc || (LOC_NAMES.includes(v.name) ? v.name : null);
+    if(loc) {
+      if(!preset[loc]) preset[loc] = { selected: true, entries: [] };
+      preset[loc].entries.push({ note: v.note || v.name || '', count: v.count || 0 });
     }
   });
   initLocs(preset);
@@ -497,15 +516,23 @@ function filt(f, el) {
 
 function getVars(it) {
   if(it.variants && it.variants.length) return it.variants;
-  // 旧形式
+  // 旧形式互換
   const old = [];
   const LOCS = {sh:'渋谷', shin:'新町御池', dema:'出町柳', maru:'円町'};
-  Object.keys(LOCS).forEach(k => { if(it[k]) old.push({name: LOCS[k], count: it[k], note:''}); });
+  Object.keys(LOCS).forEach(k => { if(it[k]) old.push({loc: LOCS[k], note:'', count: it[k]}); });
   return old;
 }
 
 function getTotal(it) {
   return getVars(it).reduce((s, v) => s + (v.count||0), 0);
+}
+
+function getLabel(v) {
+  // loc + note 表示用
+  if(v.loc && v.note) return v.loc + ' · ' + v.note;
+  if(v.loc) return v.loc;
+  if(v.name) return v.name; // 旧形式
+  return '';
 }
 
 function rl() {
@@ -516,11 +543,11 @@ function rl() {
     const vars = getVars(it);
     const tot = getTotal(it);
     const badges = vars.map(v =>
-      `<span class="vbdg">${v.name} <b>${v.count||0}</b>${v.note ? ' · ' + v.note : ''}</span>`
+      `<span class="vbdg">${getLabel(v)} <b>${v.count||0}</b></span>`
     ).join('') + `<span class="vbdg tot">計 <b id="vbt-${it.id}">${tot}</b></span>`;
     const editRows = vars.map((v, vi) => `
       <div class="vedit-row">
-        <span class="vedit-lbl">${v.name}${v.note ? ' <span class="vnote">'+v.note+'</span>' : ''}</span>
+        <span class="vedit-lbl">${getLabel(v)}</span>
         <div class="vicb" onclick="uv('${it.id}',${vi},-1)">−</div>
         <div class="vicn" id="vn-${it.id}-${vi}">${v.count||0}</div>
         <div class="vicb" onclick="uv('${it.id}',${vi},1)">＋</div>
@@ -546,11 +573,8 @@ async function deleteItem(id) {
   const it = items.find(i => i.id === id);
   const name = it ? it.name : 'この商品';
   if(!confirm(name + ' を削除しますか？')) return;
-  try {
-    await col.doc(id).delete();
-  } catch(e) {
-    alert('削除に失敗したおいっす: ' + e.message);
-  }
+  try { await col.doc(id).delete(); }
+  catch(e){ alert('削除に失敗したおいっす: ' + e.message); }
 }
 
 // ===== 一覧：個数更新 =====
@@ -579,7 +603,7 @@ function rc() {
       const vars = getVars(it);
       const tot = getTotal(it);
       const varBadges = vars.map(v =>
-        `<span class="ck-vbdg">${v.name} ${v.count||0}${v.note ? ' '+v.note : ''}</span>`
+        `<span class="ck-vbdg">${getLabel(v)} ${v.count||0}</span>`
       ).join('');
       return `<div class="ck-row">
         <div class="ck-th">${it.img ? `<img src="${it.img}">` : '📦'}</div>
