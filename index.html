@@ -875,6 +875,10 @@ function locItemCardHTML({it, vars, tot}, faded) {
       <div class="loc-item-count${tot===0?' zero':''}">計 ${tot}</div>
     </div>
     <div class="loc-item-vars">${varRows}</div>
+    <div class="item-actions" style="margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f0">
+      <button class="edit-btn" onclick="editItem('${it.id}')">✏️ 編集</button>
+      <button class="del-btn" onclick="deleteItem('${it.id}')">🗑️ 削除</button>
+    </div>
   </div>`;
 }
 
