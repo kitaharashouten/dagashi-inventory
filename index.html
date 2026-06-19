@@ -172,6 +172,12 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .loc-item-note{font-size:11px;color:#888;margin-top:2px}
 .loc-item-count{font-size:18px;font-weight:500;flex-shrink:0}
 .loc-section-title{font-size:11px;color:#aaa;font-weight:500;margin:12px 0 5px;letter-spacing:.05em}
+.loc-item-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.loc-item-head{display:flex;align-items:center;gap:10px}
+.loc-item-vars{border-top:1px solid #f0f0f0;padding-top:8px;margin-top:10px;display:flex;flex-direction:column;gap:5px}
+.loc-var-row{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.loc-var-note{color:#888}
+.loc-var-count{font-weight:500}
 </style>
 </head>
 <body>
@@ -812,52 +818,63 @@ async function doDeleteVar() {
 let curLocTab = LOC_NAMES[0];
 
 function rloc() {
-  // タブチップ
   document.getElementById('locTabChips').innerHTML = LOC_NAMES.map(l =>
     `<div class="chip${l===curLocTab?' active':''}" onclick="setLocTab('${l}')">${l}</div>`
   ).join('');
 
-  // この場所のバリアントを全アイテムから収集
-  const rows = [];
+  // この場所のアイテムを商品ごとにグループ化
+  const locItems = [];
   items.forEach(it => {
-    getVars(it).filter(v => (v.loc||v.name) === curLocTab).forEach(v => {
-      rows.push({ name: it.name, img: it.img, note: v.note||'', count: v.count||0 });
-    });
+    const vars = getVars(it).filter(v => (v.loc||v.name) === curLocTab);
+    if(!vars.length) return;
+    const tot = vars.reduce((s,v) => s+(v.count||0), 0);
+    locItems.push({it, vars, tot});
   });
 
   // サマリー
-  const total = rows.reduce((s,r) => s + r.count, 0);
-  const zeroCount = rows.filter(r => r.count === 0).length;
+  const total = locItems.reduce((s,r) => s + r.tot, 0);
+  const zeroCount = locItems.filter(r => r.tot === 0).length;
   document.getElementById('locStatRow').innerHTML = `
     <div class="loc-stat-card"><div class="lsc-label">総在庫数</div><div class="lsc-num">${total}</div></div>
-    <div class="loc-stat-card"><div class="lsc-label">商品種類</div><div class="lsc-num">${rows.length}</div></div>
+    <div class="loc-stat-card"><div class="lsc-label">商品種類</div><div class="lsc-num">${locItems.length}</div></div>
     <div class="loc-stat-card"><div class="lsc-label">在庫ゼロ</div><div class="lsc-num${zeroCount>0?' zero':''}">${zeroCount}</div></div>
   `;
 
-  if(!rows.length){
+  if(!locItems.length){
     document.getElementById('locItemList').innerHTML = '<div class="empty">この場所の在庫はないおいっす</div>';
     return;
   }
 
-  const okRows = rows.filter(r => r.count > 0);
-  const zeroRows = rows.filter(r => r.count === 0);
-  let html = okRows.map(r => locItemHTML(r)).join('');
-  if(zeroRows.length) {
+  const okItems = locItems.filter(r => r.tot > 0);
+  const zeroItems = locItems.filter(r => r.tot === 0);
+  let html = okItems.map(r => locItemCardHTML(r)).join('');
+  if(zeroItems.length) {
     html += `<div class="loc-section-title">在庫ゼロ</div>`;
-    html += zeroRows.map(r => locItemHTML(r, true)).join('');
+    html += zeroItems.map(r => locItemCardHTML(r, true)).join('');
   }
   document.getElementById('locItemList').innerHTML = html;
 }
 
-function locItemHTML(r, faded) {
-  const thumb = r.img ? `<img src="${r.img}" alt="">` : '📦';
-  return `<div class="loc-item-row"${faded?' style="opacity:.45"':''}>
-    <div class="loc-item-thumb">${thumb}</div>
-    <div class="loc-item-info">
-      <div class="loc-item-name">${r.name}</div>
-      ${r.note ? `<div class="loc-item-note">${r.note}</div>` : ''}
+function locItemCardHTML({it, vars, tot}, faded) {
+  const thumb = it.img ? `<img src="${it.img}" alt="">` : '📦';
+  const varRows = vars.map(v => {
+    const cnt = v.count||0;
+    const note = v.note || '（備考なし）';
+    return `<div class="loc-var-row">
+      <span class="loc-var-note">${note}</span>
+      <span class="loc-var-count${cnt===0?' zero':''}">${cnt}</span>
+    </div>`;
+  }).join('');
+  return `<div class="loc-item-card"${faded?' style="opacity:.45"':''}>
+    <div class="loc-item-head">
+      <div class="loc-item-thumb">${thumb}</div>
+      <div class="loc-item-info">
+        <div class="loc-item-name">${it.name}</div>
+        <div class="loc-item-note">${it.cat}</div>
+      </div>
+      <div class="loc-item-count${tot===0?' zero':''}">計 ${tot}</div>
     </div>
-    <div class="loc-item-count${r.count===0?' zero':''}">${r.count}</div>
+    <div class="loc-item-vars">${varRows}</div>
   </div>`;
 }
 
