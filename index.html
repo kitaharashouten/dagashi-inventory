@@ -152,6 +152,20 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .ck-vbdg{font-size:10px;padding:1px 7px;border-radius:20px;background:#f5f5f5;border:1px solid #e0e0e0;color:#555}
 .ck-tot{font-size:15px;font-weight:500;flex-shrink:0;padding-left:8px;margin-top:2px}
 .zero{color:#dc2626}
+
+/* ===== 場所別 ===== */
+.loc-stat-row{display:flex;gap:8px;margin-bottom:0.75rem}
+.loc-stat-card{flex:1;background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:10px 12px;text-align:center}
+.loc-stat-card .lsc-label{font-size:11px;color:#888;margin-bottom:3px}
+.loc-stat-card .lsc-num{font-size:20px;font-weight:500}
+.loc-item-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid #e0e0e0;border-radius:10px;margin-bottom:6px}
+.loc-item-thumb{width:38px;height:38px;border-radius:7px;background:#f5f5f5;border:1px solid #e0e0e0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden}
+.loc-item-thumb img{width:38px;height:38px;object-fit:cover}
+.loc-item-info{flex:1;min-width:0}
+.loc-item-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.loc-item-note{font-size:11px;color:#888;margin-top:2px}
+.loc-item-count{font-size:18px;font-weight:500;flex-shrink:0}
+.loc-section-title{font-size:11px;color:#aaa;font-weight:500;margin:12px 0 5px;letter-spacing:.05em}
 </style>
 </head>
 <body>
@@ -166,12 +180,14 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
   <div class="tab-bar">
     <div class="tab active" onclick="sw('add')">＋ 登録</div>
     <div class="tab" onclick="sw('list')">一覧</div>
+    <div class="tab" onclick="sw('loc')">場所別</div>
     <div class="tab" onclick="sw('check')">チェック</div>
   </div>
   <div class="main-body">
     <div class="sidebar">
       <div class="tab active" onclick="sw('add')">＋ 登録</div>
       <div class="tab" onclick="sw('list')">📦 一覧</div>
+      <div class="tab" onclick="sw('loc')">📍 場所別</div>
       <div class="tab" onclick="sw('check')">✅ チェック</div>
     </div>
     <div class="content-area">
@@ -225,6 +241,13 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
           <div class="chip" onclick="filt('おんなのこぶき',this)">おんなぶき</div>
         </div>
         <div id="il"></div>
+      </div>
+
+      <!-- 場所別タブ -->
+      <div id="tab-loc" class="section">
+        <div class="chips" id="locTabChips"></div>
+        <div class="loc-stat-row" id="locStatRow"></div>
+        <div id="locItemList"></div>
       </div>
 
       <!-- チェックタブ -->
@@ -287,6 +310,7 @@ col.orderBy('createdAt','asc').onSnapshot(snap => {
   const b = document.getElementById('syncBadge');
   b.textContent = '✓ 同期済み'; b.className = 'sync-badge ok';
   if(curTab === 'list') rl();
+  if(curTab === 'loc') rloc();
   if(curTab === 'check') rc();
 }, err => {
   const b = document.getElementById('syncBadge');
@@ -302,6 +326,7 @@ function sw(n) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('tab-'+n).classList.add('active');
   if(n==='list') rl();
+  if(n==='loc') rloc();
   if(n==='check') rc();
 }
 
@@ -731,6 +756,61 @@ function showMoveToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
+
+// ===== 場所別ビュー =====
+let curLocTab = LOC_NAMES[0];
+
+function rloc() {
+  // タブチップ
+  document.getElementById('locTabChips').innerHTML = LOC_NAMES.map(l =>
+    `<div class="chip${l===curLocTab?' active':''}" onclick="setLocTab('${l}')">${l}</div>`
+  ).join('');
+
+  // この場所のバリアントを全アイテムから収集
+  const rows = [];
+  items.forEach(it => {
+    getVars(it).filter(v => (v.loc||v.name) === curLocTab).forEach(v => {
+      rows.push({ name: it.name, img: it.img, note: v.note||'', count: v.count||0 });
+    });
+  });
+
+  // サマリー
+  const total = rows.reduce((s,r) => s + r.count, 0);
+  const zeroCount = rows.filter(r => r.count === 0).length;
+  document.getElementById('locStatRow').innerHTML = `
+    <div class="loc-stat-card"><div class="lsc-label">総在庫数</div><div class="lsc-num">${total}</div></div>
+    <div class="loc-stat-card"><div class="lsc-label">商品種類</div><div class="lsc-num">${rows.length}</div></div>
+    <div class="loc-stat-card"><div class="lsc-label">在庫ゼロ</div><div class="lsc-num${zeroCount>0?' zero':''}">${zeroCount}</div></div>
+  `;
+
+  if(!rows.length){
+    document.getElementById('locItemList').innerHTML = '<div class="empty">この場所の在庫はないおいっす</div>';
+    return;
+  }
+
+  const okRows = rows.filter(r => r.count > 0);
+  const zeroRows = rows.filter(r => r.count === 0);
+  let html = okRows.map(r => locItemHTML(r)).join('');
+  if(zeroRows.length) {
+    html += `<div class="loc-section-title">在庫ゼロ</div>`;
+    html += zeroRows.map(r => locItemHTML(r, true)).join('');
+  }
+  document.getElementById('locItemList').innerHTML = html;
+}
+
+function locItemHTML(r, faded) {
+  const thumb = r.img ? `<img src="${r.img}" alt="">` : '📦';
+  return `<div class="loc-item-row"${faded?' style="opacity:.45"':''}>
+    <div class="loc-item-thumb">${thumb}</div>
+    <div class="loc-item-info">
+      <div class="loc-item-name">${r.name}</div>
+      ${r.note ? `<div class="loc-item-note">${r.note}</div>` : ''}
+    </div>
+    <div class="loc-item-count${r.count===0?' zero':''}">${r.count}</div>
+  </div>`;
+}
+
+function setLocTab(loc) { curLocTab = loc; rloc(); }
 
 // ===== チェックリスト =====
 function rc() {
