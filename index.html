@@ -172,6 +172,10 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .loc-item-note{font-size:11px;color:#888;margin-top:2px}
 .loc-item-count{font-size:18px;font-weight:500;flex-shrink:0}
 .loc-section-title{font-size:11px;color:#aaa;font-weight:500;margin:12px 0 5px;letter-spacing:.05em}
+.total-item-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;margin-bottom:8px}
+.total-item-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f0f0}
+.total-note-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #f0f0f0}
+.total-note-row:last-child{border-bottom:none}
 .loc-item-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:12px 14px;margin-bottom:8px}
 .loc-item-head{display:flex;align-items:center;gap:10px}
 .loc-item-vars{border-top:1px solid #f0f0f0;padding-top:8px;margin-top:10px;display:flex;flex-direction:column;gap:5px}
@@ -193,6 +197,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
     <div class="tab active" onclick="sw('add')">＋ 登録</div>
     <div class="tab" onclick="sw('list')">一覧</div>
     <div class="tab" onclick="sw('loc')">場所別</div>
+    <div class="tab" onclick="sw('total')">総合</div>
     <div class="tab" onclick="sw('check')">チェック</div>
   </div>
   <div class="main-body">
@@ -200,6 +205,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
       <div class="tab active" onclick="sw('add')">＋ 登録</div>
       <div class="tab" onclick="sw('list')">📦 一覧</div>
       <div class="tab" onclick="sw('loc')">📍 場所別</div>
+      <div class="tab" onclick="sw('total')">📊 総合</div>
       <div class="tab" onclick="sw('check')">✅ チェック</div>
     </div>
     <div class="content-area">
@@ -265,6 +271,11 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
         <div class="chips" id="locTabChips"></div>
         <div class="loc-stat-row" id="locStatRow"></div>
         <div id="locItemList"></div>
+      </div>
+
+      <!-- 総合タブ -->
+      <div id="tab-total" class="section">
+        <div id="totalItemList"></div>
       </div>
 
       <!-- チェックタブ -->
@@ -333,6 +344,7 @@ col.orderBy('createdAt','asc').onSnapshot(snap => {
   b.textContent = '✓ 同期済み'; b.className = 'sync-badge ok';
   if(curTab === 'list') rl();
   if(curTab === 'loc') rloc();
+  if(curTab === 'total') rtotal();
   if(curTab === 'check') rc();
 }, err => {
   const b = document.getElementById('syncBadge');
@@ -349,6 +361,7 @@ function sw(n) {
   document.getElementById('tab-'+n).classList.add('active');
   if(n==='list') rl();
   if(n==='loc') rloc();
+  if(n==='total') rtotal();
   if(n==='check') rc();
 }
 
@@ -812,6 +825,39 @@ async function doDeleteVar() {
   } catch(e) {
     alert('削除に失敗したおいっす: ' + e.message);
   }
+}
+
+// ===== 総合ビュー =====
+function rtotal() {
+  const el = document.getElementById('totalItemList');
+  if(!items.length){ el.innerHTML = '<div class="empty">在庫がまだ登録されていないおいっす</div>'; return; }
+  el.innerHTML = items.map(it => {
+    const vars = getVars(it);
+    if(!vars.length) return '';
+    // 備考ごとに合計
+    const noteMap = {};
+    vars.forEach(v => {
+      const key = v.note || '（備考なし）';
+      noteMap[key] = (noteMap[key] || 0) + (v.count || 0);
+    });
+    const rows = Object.entries(noteMap).map(([note, total]) =>
+      `<div class="total-note-row">
+        <span style="font-size:13px${total===0?';color:#dc2626':''}">${note}</span>
+        <span style="font-size:15px;font-weight:500${total===0?';color:#dc2626':''}">${total}</span>
+      </div>`
+    ).join('');
+    const thumb = it.img ? `<img src="${it.img}" alt="">` : '📦';
+    return `<div class="total-item-card">
+      <div class="total-item-head">
+        <div class="loc-item-thumb">${thumb}</div>
+        <div class="loc-item-info">
+          <div class="loc-item-name">${it.name}</div>
+          <div class="loc-item-note">${it.cat}</div>
+        </div>
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
 }
 
 // ===== 場所別ビュー =====
