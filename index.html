@@ -669,15 +669,15 @@ function rl() {
   el.innerHTML = fl.map(it => {
     const vars = getVars(it);
     const tot = getTotal(it);
+    const rankIdx = it.rank !== undefined ? it.rank : 0;
+    const r = RANKS[rankIdx];
     const badges = vars.map(v =>
       `<span class="vbdg">${getLabel(v)} <b>${v.count||0}</b></span>`
-    ).join('') + `<span class="vbdg tot">計 <b id="vbt-${it.id}">${tot}</b></span>`;
+    ).join('') + `<span class="vbdg tot">計 <b id="vbt-${it.id}">${tot}</b></span>` +
+    `<span class="rank-badge ${r.cls}" onclick="setItemRank('${it.id}',${rankIdx})" style="vertical-align:middle">${r.label}</span>`;
     const editRows = vars.map((v, vi) => {
       const cnt = v.count||0;
       const isZero = cnt === 0;
-      const noteKey = v.note || '（備考なし）';
-      const rankIdx = (it.ranks && it.ranks[noteKey] !== undefined) ? it.ranks[noteKey] : 0;
-      const r = RANKS[rankIdx];
       return `
       <div class="vedit-row" id="vrow-${it.id}-${vi}">
         <span class="vedit-lbl">${getLabel(v)}</span>
@@ -685,7 +685,6 @@ function rl() {
         <div class="vicn${isZero?' zero':''}" id="vn-${it.id}-${vi}">${cnt}</div>
         <div class="vicb" onclick="uv('${it.id}',${vi},1)">＋</div>
         <button class="move-btn" onclick="openMoveSheet('${it.id}',${vi})">移動</button>
-        <span class="rank-badge ${r.cls}" onclick="setRank('${it.id}','${noteKey.replace(/'/g,"\\'")}',${rankIdx})">${r.label}</span>
         ${isZero ? `<button class="del-var-btn" onclick="askDeleteVar('${it.id}',${vi},'${getLabel(v).replace(/'/g,"\\'")}')">削除</button>` : ''}
       </div>`;
     }).join('');
@@ -865,6 +864,12 @@ async function setRank(itemId, note, curRank) {
   const ranks = Object.assign({}, it.ranks || {});
   ranks[note] = nextRank;
   try { await col.doc(itemId).update({ranks}); }
+  catch(e) { console.error(e); }
+}
+
+async function setItemRank(itemId, curRank) {
+  const nextRank = (curRank + 1) % RANKS.length;
+  try { await col.doc(itemId).update({rank: nextRank}); }
   catch(e) { console.error(e); }
 }
 
