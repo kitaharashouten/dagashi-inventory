@@ -675,6 +675,9 @@ function rl() {
     const editRows = vars.map((v, vi) => {
       const cnt = v.count||0;
       const isZero = cnt === 0;
+      const noteKey = v.note || '（備考なし）';
+      const rankIdx = (it.ranks && it.ranks[noteKey] !== undefined) ? it.ranks[noteKey] : 0;
+      const r = RANKS[rankIdx];
       return `
       <div class="vedit-row" id="vrow-${it.id}-${vi}">
         <span class="vedit-lbl">${getLabel(v)}</span>
@@ -682,6 +685,7 @@ function rl() {
         <div class="vicn${isZero?' zero':''}" id="vn-${it.id}-${vi}">${cnt}</div>
         <div class="vicb" onclick="uv('${it.id}',${vi},1)">＋</div>
         <button class="move-btn" onclick="openMoveSheet('${it.id}',${vi})">移動</button>
+        <span class="rank-badge ${r.cls}" onclick="setRank('${it.id}','${noteKey.replace(/'/g,"\\'")}',${rankIdx})">${r.label}</span>
         ${isZero ? `<button class="del-var-btn" onclick="askDeleteVar('${it.id}',${vi},'${getLabel(v).replace(/'/g,"\\'")}')">削除</button>` : ''}
       </div>`;
     }).join('');
@@ -885,17 +889,12 @@ function rtotal() {
       const key = v.note || '（備考なし）';
       noteMap[key] = (noteMap[key] || 0) + (v.count || 0);
     });
-    const rows = Object.entries(noteMap).map(([note, total]) => {
-      const rankIdx = (it.ranks && it.ranks[note] !== undefined) ? it.ranks[note] : 0;
-      const r = RANKS[rankIdx];
-      return `<div class="total-note-row">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:13px${total===0?';color:#dc2626':''}">${note}</span>
-          <span style="font-size:15px;font-weight:500${total===0?';color:#dc2626':''}">${total}</span>
-        </div>
-        <span class="rank-badge ${r.cls}" onclick="setRank('${it.id}','${note.replace(/'/g,"\\'")}',${rankIdx})">${r.label}</span>
-      </div>`;
-    }).join('');
+    const rows = Object.entries(noteMap).map(([note, total]) =>
+      `<div class="total-note-row">
+        <span style="font-size:13px${total===0?';color:#dc2626':''}">${note}</span>
+        <span style="font-size:15px;font-weight:500${total===0?';color:#dc2626':''}">${total}</span>
+      </div>`
+    ).join('');
     const thumb = it.img ? `<img src="${it.img}" alt="">` : '📦';
     return `<div class="total-item-card">
       <div class="total-item-head">
