@@ -176,6 +176,11 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .total-item-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f0f0}
 .total-note-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #f0f0f0}
 .total-note-row:last-child{border-bottom:none}
+.rank-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;user-select:none;white-space:nowrap;flex-shrink:0}
+.rank-0{background:#f0f0f0;color:#999;border:1px solid #e0e0e0}
+.rank-1{background:#fef2f2;color:#991b1b;border:1px solid #fca5a5}
+.rank-2{background:#fffbeb;color:#92400e;border:1px solid #fcd34d}
+.rank-3{background:#f0fdf4;color:#166534;border:1px solid #86efac}
 .loc-item-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:12px 14px;margin-bottom:8px}
 .loc-item-head{display:flex;align-items:center;gap:10px}
 .loc-item-vars{border-top:1px solid #f0f0f0;padding-top:8px;margin-top:10px;display:flex;flex-direction:column;gap:5px}
@@ -841,6 +846,24 @@ async function doDeleteVar() {
   }
 }
 
+// ===== ランク =====
+const RANKS = [
+  {cls:'rank-0', label:'未設定'},
+  {cls:'rank-1', label:'要処分'},
+  {cls:'rank-2', label:'様子見'},
+  {cls:'rank-3', label:'問題なし'}
+];
+
+async function setRank(itemId, note, curRank) {
+  const nextRank = (curRank + 1) % RANKS.length;
+  const it = items.find(i => i.id === itemId);
+  if(!it) return;
+  const ranks = Object.assign({}, it.ranks || {});
+  ranks[note] = nextRank;
+  try { await col.doc(itemId).update({ranks}); }
+  catch(e) { console.error(e); }
+}
+
 // ===== 総合ビュー =====
 function filtTotal(f, el) {
   tf = f;
@@ -862,12 +885,17 @@ function rtotal() {
       const key = v.note || '（備考なし）';
       noteMap[key] = (noteMap[key] || 0) + (v.count || 0);
     });
-    const rows = Object.entries(noteMap).map(([note, total]) =>
-      `<div class="total-note-row">
-        <span style="font-size:13px${total===0?';color:#dc2626':''}">${note}</span>
-        <span style="font-size:15px;font-weight:500${total===0?';color:#dc2626':''}">${total}</span>
-      </div>`
-    ).join('');
+    const rows = Object.entries(noteMap).map(([note, total]) => {
+      const rankIdx = (it.ranks && it.ranks[note] !== undefined) ? it.ranks[note] : 0;
+      const r = RANKS[rankIdx];
+      return `<div class="total-note-row">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px${total===0?';color:#dc2626':''}">${note}</span>
+          <span style="font-size:15px;font-weight:500${total===0?';color:#dc2626':''}">${total}</span>
+        </div>
+        <span class="rank-badge ${r.cls}" onclick="setRank('${it.id}','${note.replace(/'/g,"\\'")}',${rankIdx})">${r.label}</span>
+      </div>`;
+    }).join('');
     const thumb = it.img ? `<img src="${it.img}" alt="">` : '📦';
     return `<div class="total-item-card">
       <div class="total-item-head">
