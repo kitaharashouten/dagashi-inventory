@@ -275,6 +275,20 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 
       <!-- 総合タブ -->
       <div id="tab-total" class="section">
+        <div class="chips" id="totalChips">
+          <div class="chip active" onclick="filtTotal('all',this)">すべて</div>
+          <div class="chip" onclick="filtTotal('おめん',this)">おめん</div>
+          <div class="chip" onclick="filtTotal('おもちゃ',this)">おもちゃ</div>
+          <div class="chip" onclick="filtTotal('シュシュ',this)">シュシュ</div>
+          <div class="chip" onclick="filtTotal('花火',this)">花火</div>
+          <div class="chip" onclick="filtTotal('かざ車',this)">かざ車</div>
+          <div class="chip" onclick="filtTotal('おとこのこぶき',this)">おとこぶき</div>
+          <div class="chip" onclick="filtTotal('おんなのこぶき',this)">おんなぶき</div>
+          <div class="chip" onclick="filtTotal('クリスマス',this)">クリスマス</div>
+          <div class="chip" onclick="filtTotal('お正月',this)">お正月</div>
+          <div class="chip" onclick="filtTotal('ハロウィン',this)">ハロウィン</div>
+          <div class="chip" onclick="filtTotal('その他',this)">その他</div>
+        </div>
         <div id="totalItemList"></div>
       </div>
 
@@ -330,7 +344,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const col = db.collection('items');
 
-let items = [], img = null, rec = null, curTab = 'add', cf = 'all';
+let items = [], img = null, rec = null, curTab = 'add', cf = 'all', tf = 'all';
 let editingId = null;
 const LOC_NAMES = ['渋谷', '出町柳', '新町御池', '円町'];
 
@@ -828,10 +842,18 @@ async function doDeleteVar() {
 }
 
 // ===== 総合ビュー =====
+function filtTotal(f, el) {
+  tf = f;
+  document.querySelectorAll('#totalChips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  rtotal();
+}
+
 function rtotal() {
   const el = document.getElementById('totalItemList');
-  if(!items.length){ el.innerHTML = '<div class="empty">在庫がまだ登録されていないおいっす</div>'; return; }
-  el.innerHTML = items.map(it => {
+  const fl = tf === 'all' ? items : items.filter(i => i.cat === tf);
+  if(!fl.length){ el.innerHTML = '<div class="empty">まだ登録がないおいっす</div>'; return; }
+  el.innerHTML = fl.map(it => {
     const vars = getVars(it);
     if(!vars.length) return '';
     // 備考ごとに合計
