@@ -254,8 +254,9 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 
       <!-- 一覧タブ -->
       <div id="tab-list" class="section">
-        <div style="display:flex;gap:6px;margin-bottom:0.75rem;align-items:center">
-          <input type="text" id="searchInput" placeholder="🔍 商品名を検索..." style="flex:1;margin-bottom:0;font-size:14px" oninput="searchList(this.value)">
+        <div style="display:flex;gap:6px;margin-bottom:0.75rem;align-items:center;position:relative">
+          <input type="text" id="searchInput" placeholder="🔍 商品名を検索..." style="flex:1;margin-bottom:0;font-size:14px;padding-right:32px" oninput="searchList(this.value)">
+          <button id="searchClearBtn" onclick="clearSearch()" style="display:none;position:absolute;right:46px;top:50%;transform:translateY(-50%);background:none;border:none;color:#aaa;font-size:16px;cursor:pointer;padding:4px;line-height:1">✕</button>
           <button class="var-mic" id="searchMicBtn" onclick="micSearch()" style="width:36px;height:36px;flex-shrink:0" title="音声で検索">🎤</button>
         </div>
         <div class="chips">
@@ -284,6 +285,9 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 
       <!-- 総合タブ -->
       <div id="tab-total" class="section">
+        <div style="margin-bottom:0.5rem">
+          <button id="disposeFilterBtn" onclick="toggleDisposeFilter()" style="padding:6px 14px;border-radius:20px;border:1px solid #fca5a5;background:#fff5f5;color:#991b1b;font-size:12px;font-weight:500;cursor:pointer">🔴 要処分のみ</button>
+        </div>
         <div class="chips" id="totalChips">
           <div class="chip active" onclick="filtTotal('all',this)">すべて</div>
           <div class="chip" onclick="filtTotal('おめん',this)">おめん</div>
@@ -353,7 +357,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const col = db.collection('items');
 
-let items = [], img = null, rec = null, curTab = 'add', cf = 'all', tf = 'all', sq = '';
+let items = [], img = null, rec = null, curTab = 'add', cf = 'all', tf = 'all', sq = '', disposeOnly = false;
 let editingId = null;
 const LOC_NAMES = ['渋谷', '出町柳', '新町御池', '円町'];
 
@@ -669,6 +673,17 @@ function getLabel(v) {
 
 function searchList(val) {
   sq = val.trim();
+  const cb = document.getElementById('searchClearBtn');
+  if(cb) cb.style.display = sq ? 'block' : 'none';
+  rl();
+}
+
+function clearSearch() {
+  sq = '';
+  const inp = document.getElementById('searchInput');
+  if(inp) inp.value = '';
+  const cb = document.getElementById('searchClearBtn');
+  if(cb) cb.style.display = 'none';
   rl();
 }
 
@@ -906,6 +921,17 @@ async function setItemRank(itemId, curRank) {
 }
 
 // ===== 総合ビュー =====
+function toggleDisposeFilter() {
+  disposeOnly = !disposeOnly;
+  const btn = document.getElementById('disposeFilterBtn');
+  if(btn) {
+    btn.style.background = disposeOnly ? '#fef2f2' : '#fff5f5';
+    btn.style.border = disposeOnly ? '2px solid #991b1b' : '1px solid #fca5a5';
+    btn.style.fontWeight = disposeOnly ? '700' : '500';
+  }
+  rtotal();
+}
+
 function filtTotal(f, el) {
   tf = f;
   document.querySelectorAll('#totalChips .chip').forEach(c => c.classList.remove('active'));
@@ -915,7 +941,8 @@ function filtTotal(f, el) {
 
 function rtotal() {
   const el = document.getElementById('totalItemList');
-  const fl = tf === 'all' ? items : items.filter(i => i.cat === tf);
+  let fl = tf === 'all' ? items : items.filter(i => i.cat === tf);
+  if(disposeOnly) fl = fl.filter(i => (i.rank || 0) === 1);
   if(!fl.length){ el.innerHTML = '<div class="empty">まだ登録がないおいっす</div>'; return; }
   el.innerHTML = fl.map(it => {
     const vars = getVars(it);
