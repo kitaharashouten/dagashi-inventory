@@ -187,6 +187,11 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 .loc-var-row{display:flex;justify-content:space-between;align-items:center;font-size:12px}
 .loc-var-note{color:#888}
 .loc-var-count{font-weight:500}
+.price-row{display:flex;align-items:center;gap:6px;margin-top:6px;padding-top:6px;border-top:1px solid #f0f0f0}
+.price-label{font-size:12px;color:#888;flex-shrink:0}
+.price-input{width:90px;padding:4px 8px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-weight:500;background:#fff;color:#222;margin-bottom:0}
+.price-input:focus{outline:none;border-color:#4caf50}
+.price-display{font-size:13px;font-weight:500;color:#222}
 </style>
 </head>
 <body>
@@ -238,6 +243,11 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
                 <option>おんなのこぶき</option><option>クリスマス</option>
                 <option>お正月</option><option>ハロウィン</option><option>その他</option>
               </select>
+              <div class="lbl">金額（円）</div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <input type="number" id="pr" placeholder="例：500" style="flex:1;margin-bottom:0" min="0">
+                <button class="var-mic" id="priceMicFormBtn" onclick="micPriceForm()" style="width:36px;height:36px;flex-shrink:0" title="音声で金額入力">🎤</button>
+              </div>
             </div>
           </div>
           <div class="form-col">
@@ -608,8 +618,10 @@ async function save() {
   const isEdit = !!editingId;
   btn.disabled = true; btn.textContent = isEdit ? '更新中...' : '保存中...';
   try {
+    const priceRaw = document.getElementById('pr').value;
     const data = { name: n, cat: document.getElementById('ct').value, variants: vars };
     if(img) data.img = img;
+    if(priceRaw !== '') data.price = Number(priceRaw);
     if(isEdit) {
       data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
       await col.doc(editingId).update(data);
@@ -637,6 +649,7 @@ function resetForm() {
   document.getElementById('ip').style.display = '';
   document.getElementById('ii').value = '';
   img = null;
+  document.getElementById('pr').value = '';
   initLocs();
   document.getElementById('saveBtn').textContent = '保存する';
   const cb = document.getElementById('cancelEditBtn');
@@ -665,6 +678,7 @@ function editItem(id) {
     }
   });
   initLocs(preset);
+  document.getElementById('pr').value = it.price !== undefined ? it.price : '';
   document.getElementById('saveBtn').textContent = '更新する';
   const cb = document.getElementById('cancelEditBtn');
   if(cb) cb.style.display = 'block';
@@ -761,6 +775,7 @@ function rl() {
         ${isZero ? `<button class="del-var-btn" onclick="askDeleteVar('${it.id}',${vi},'${getLabel(v).replace(/'/g,"\\'")}')">削除</button>` : ''}
       </div>`;
     }).join('');
+    const priceVal = it.price !== undefined ? it.price : '';
     return `<div class="item-card">
       <div class="thumb">${it.img ? `<img src="${it.img}" alt="${it.name}">` : '📦'}</div>
       <div class="iinfo">
@@ -768,6 +783,13 @@ function rl() {
         <div class="icat">${it.cat}</div>
         <div class="vbadges">${badges}</div>
         <div class="vedit">${editRows}</div>
+        <div class="price-row">
+          <span class="price-label">¥</span>
+          <input class="price-input" type="number" min="0" placeholder="金額" value="${priceVal}"
+            onchange="setPrice('${it.id}', this.value)"
+            id="price-${it.id}">
+          <button class="var-mic" id="pmb-${it.id}" onclick="micPrice('${it.id}')" style="width:26px;height:26px" title="音声で金額">🎤</button>
+        </div>
         <div class="item-actions">
           <button class="edit-btn" onclick="editItem('${it.id}')">✏️ 編集</button>
           <button class="del-btn" onclick="deleteItem('${it.id}')">🗑️ 削除</button>
@@ -775,6 +797,58 @@ function rl() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ===== 金額 =====
+async function setPrice(id, val) {
+  const price = val === '' ? null : Number(val);
+  try { await col.doc(id).update({price, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}); }
+  catch(e) { console.error(e); }
+}
+
+const priceNumMap = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'百':100,'千':1000,'万':10000,'零':0,'ゼロ':0,'いち':1,'に':2,'さん':3,'し':4,'ご':5,'ろく':6,'なな':7,'はち':8,'きゅう':9,'じゅう':10,'ひゃく':100,'せん':1000,'まん':10000};
+
+function parsePrice(txt) {
+  // 数字がそのまま含まれていれば抽出
+  const m = txt.replace(/[，,]/g,'').match(/\d+/);
+  if(m) return parseInt(m[0]);
+  return null;
+}
+
+let priceMicRec = null;
+function micPrice(id) {
+  const btn = document.getElementById('pmb-'+id);
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){ alert('このブラウザは音声入力に対応していません'); return; }
+  if(priceMicRec){ priceMicRec.stop(); priceMicRec=null; if(btn) btn.classList.remove('rec'); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  priceMicRec = new SR(); priceMicRec.lang = 'ja-JP';
+  priceMicRec.onresult = e => {
+    const txt = e.results[0][0].transcript.trim();
+    const price = parsePrice(txt);
+    if(price !== null) {
+      const inp = document.getElementById('price-'+id);
+      if(inp) inp.value = price;
+      setPrice(id, price);
+    }
+  };
+  priceMicRec.onend = () => { priceMicRec=null; if(btn) btn.classList.remove('rec'); };
+  priceMicRec.start(); if(btn) btn.classList.add('rec');
+}
+
+let priceMicFormRec = null;
+function micPriceForm() {
+  const btn = document.getElementById('priceMicFormBtn');
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){ alert('このブラウザは音声入力に対応していません'); return; }
+  if(priceMicFormRec){ priceMicFormRec.stop(); priceMicFormRec=null; btn.classList.remove('rec'); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  priceMicFormRec = new SR(); priceMicFormRec.lang = 'ja-JP';
+  priceMicFormRec.onresult = e => {
+    const txt = e.results[0][0].transcript.trim();
+    const price = parsePrice(txt);
+    if(price !== null) document.getElementById('pr').value = price;
+  };
+  priceMicFormRec.onend = () => { priceMicFormRec=null; btn.classList.remove('rec'); };
+  priceMicFormRec.start(); btn.classList.add('rec');
 }
 
 // ===== 削除 =====
