@@ -254,6 +254,10 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 
       <!-- 一覧タブ -->
       <div id="tab-list" class="section">
+        <div style="display:flex;gap:6px;margin-bottom:0.75rem;align-items:center">
+          <input type="text" id="searchInput" placeholder="🔍 商品名を検索..." style="flex:1;margin-bottom:0;font-size:14px" oninput="searchList(this.value)">
+          <button class="var-mic" id="searchMicBtn" onclick="micSearch()" style="width:36px;height:36px;flex-shrink:0" title="音声で検索">🎤</button>
+        </div>
         <div class="chips">
           <div class="chip active" onclick="filt('all',this)">すべて</div>
           <div class="chip" onclick="filt('おめん',this)">おめん</div>
@@ -349,7 +353,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const col = db.collection('items');
 
-let items = [], img = null, rec = null, curTab = 'add', cf = 'all', tf = 'all';
+let items = [], img = null, rec = null, curTab = 'add', cf = 'all', tf = 'all', sq = '';
 let editingId = null;
 const LOC_NAMES = ['渋谷', '出町柳', '新町御池', '円町'];
 
@@ -662,9 +666,36 @@ function getLabel(v) {
   return '';
 }
 
+function searchList(val) {
+  sq = val.trim();
+  rl();
+}
+
+let searchRec = null;
+function micSearch() {
+  const btn = document.getElementById('searchMicBtn');
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
+    alert('このブラウザは音声入力に対応していません'); return;
+  }
+  if(searchRec){ searchRec.stop(); searchRec=null; btn.classList.remove('rec'); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  searchRec = new SR(); searchRec.lang = 'ja-JP';
+  searchRec.onresult = e => {
+    const txt = e.results[0][0].transcript.trim();
+    const inp = document.getElementById('searchInput');
+    if(inp) inp.value = txt;
+    sq = txt;
+    rl();
+  };
+  searchRec.onend = () => { searchRec=null; btn.classList.remove('rec'); };
+  searchRec.start();
+  btn.classList.add('rec');
+}
+
 function rl() {
   const el = document.getElementById('il');
-  const fl = cf==='all' ? items : items.filter(i => i.cat===cf);
+  let fl = cf==='all' ? items : items.filter(i => i.cat===cf);
+  if(sq) fl = fl.filter(i => i.name && i.name.includes(sq));
   if(!fl.length){ el.innerHTML = '<div class="empty">まだ登録がないおいっす</div>'; return; }
   el.innerHTML = fl.map(it => {
     const vars = getVars(it);
