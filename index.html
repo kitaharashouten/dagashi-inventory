@@ -307,8 +307,13 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 
       <!-- チェックタブ -->
       <div id="tab-check" class="section">
-        <div class="ck-card" style="margin-bottom:0.75rem">
-          <p style="font-size:13px;color:#888">イベント前チェックリスト — 場所別在庫</p>
+        <div style="display:flex;gap:6px;margin-bottom:0.75rem;align-items:center;position:relative">
+          <input type="text" id="checkSearchInput" placeholder="🔍 商品名を検索..." style="flex:1;margin-bottom:0;font-size:14px;padding-right:32px" oninput="searchCheck(this.value)">
+          <button id="checkClearBtn" onclick="clearCheckSearch()" style="display:none;position:absolute;right:46px;top:50%;transform:translateY(-50%);background:none;border:none;color:#aaa;font-size:16px;cursor:pointer;padding:4px;line-height:1">✕</button>
+          <button class="var-mic" id="checkMicBtn" onclick="micCheckSearch()" style="width:36px;height:36px;flex-shrink:0" title="音声で検索">🎤</button>
+        </div>
+        <div style="margin-bottom:0.75rem">
+          <button id="checkDisposeBtn" onclick="toggleCheckDispose()" style="padding:6px 14px;border-radius:20px;border:1px solid #fca5a5;background:#fff5f5;color:#991b1b;font-size:12px;font-weight:500;cursor:pointer">🔴 要処分のみ</button>
         </div>
         <div id="cl"></div>
       </div>
@@ -357,7 +362,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const col = db.collection('items');
 
-let items = [], img = null, rec = null, curTab = 'add', cf = 'all', tf = 'all', sq = '', disposeOnly = false;
+let items = [], img = null, rec = null, curTab = 'add', cf = 'all', tf = 'all', sq = '', cq = '', disposeOnly = false, checkDisposeOnly = false;
 let editingId = null;
 const LOC_NAMES = ['渋谷', '出町柳', '新町御池', '円町'];
 
@@ -953,6 +958,7 @@ function rtotal() {
       const key = v.note || '（備考なし）';
       noteMap[key] = (noteMap[key] || 0) + (v.count || 0);
     });
+    const grandTotal = Object.values(noteMap).reduce((s, v) => s + v, 0);
     const rows = Object.entries(noteMap).map(([note, total]) =>
       `<div class="total-note-row">
         <span style="font-size:13px${total===0?';color:#dc2626':''}">${note}</span>
@@ -967,6 +973,7 @@ function rtotal() {
           <div class="loc-item-name">${it.name}</div>
           <div class="loc-item-note">${it.cat}</div>
         </div>
+        <div class="loc-item-count${grandTotal===0?' zero':''}">計 ${grandTotal}</div>
       </div>
       ${rows}
     </div>`;
@@ -1043,13 +1050,67 @@ function locItemCardHTML({it, vars, tot}, faded) {
 
 function setLocTab(loc) { curLocTab = loc; rloc(); }
 
+// ===== チェックリスト 要処分フィルター =====
+function toggleCheckDispose() {
+  checkDisposeOnly = !checkDisposeOnly;
+  const btn = document.getElementById('checkDisposeBtn');
+  if(btn) {
+    btn.style.background = checkDisposeOnly ? '#fef2f2' : '#fff5f5';
+    btn.style.border = checkDisposeOnly ? '2px solid #991b1b' : '1px solid #fca5a5';
+    btn.style.fontWeight = checkDisposeOnly ? '700' : '500';
+  }
+  rc();
+}
+
+// ===== チェックリスト検索 =====
+function searchCheck(val) {
+  cq = val.trim();
+  const cb = document.getElementById('checkClearBtn');
+  if(cb) cb.style.display = cq ? 'block' : 'none';
+  rc();
+}
+
+function clearCheckSearch() {
+  cq = '';
+  const inp = document.getElementById('checkSearchInput');
+  if(inp) inp.value = '';
+  const cb = document.getElementById('checkClearBtn');
+  if(cb) cb.style.display = 'none';
+  rc();
+}
+
+let checkRec = null;
+function micCheckSearch() {
+  const btn = document.getElementById('checkMicBtn');
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){
+    alert('このブラウザは音声入力に対応していません'); return;
+  }
+  if(checkRec){ checkRec.stop(); checkRec=null; btn.classList.remove('rec'); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  checkRec = new SR(); checkRec.lang = 'ja-JP';
+  checkRec.onresult = e => {
+    const txt = e.results[0][0].transcript.trim();
+    const inp = document.getElementById('checkSearchInput');
+    if(inp) inp.value = txt;
+    cq = txt;
+    const cb = document.getElementById('checkClearBtn');
+    if(cb) cb.style.display = cq ? 'block' : 'none';
+    rc();
+  };
+  checkRec.onend = () => { checkRec=null; btn.classList.remove('rec'); };
+  checkRec.start();
+  btn.classList.add('rec');
+}
+
 // ===== チェックリスト =====
 function rc() {
   const el = document.getElementById('cl');
   if(!items.length){ el.innerHTML = '<div class="empty">在庫がまだ登録されていないおいっす</div>'; return; }
-  const cats = [...new Set(items.map(i => i.cat))];
+  let filtered = cq ? items.filter(i => i.name && i.name.includes(cq)) : items;
+  if(checkDisposeOnly) filtered = filtered.filter(i => (i.rank || 0) === 1);
+  const cats = [...new Set(filtered.map(i => i.cat))];
   el.innerHTML = cats.map(cat => {
-    const rows = items.filter(i => i.cat===cat).map(it => {
+    const rows = filtered.filter(i => i.cat===cat).map(it => {
       const vars = getVars(it);
       const tot = getTotal(it);
       const varBadges = vars.map(v =>
