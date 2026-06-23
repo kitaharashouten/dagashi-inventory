@@ -278,6 +278,11 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 
       <!-- 場所別タブ -->
       <div id="tab-loc" class="section">
+        <div style="display:flex;gap:6px;margin-bottom:0.75rem;align-items:center;position:relative">
+          <input type="text" id="locSearchInput" placeholder="🔍 商品名を検索..." style="flex:1;margin-bottom:0;font-size:14px;padding-right:32px" oninput="searchLoc(this.value)">
+          <button id="locClearBtn" onclick="clearLocSearch()" style="display:none;position:absolute;right:46px;top:50%;transform:translateY(-50%);background:none;border:none;color:#aaa;font-size:16px;cursor:pointer;padding:4px;line-height:1">✕</button>
+          <button class="var-mic" id="locMicBtn" onclick="micLocSearch()" style="width:36px;height:36px;flex-shrink:0" title="音声で検索">🎤</button>
+        </div>
         <div class="chips" id="locTabChips"></div>
         <div class="loc-stat-row" id="locStatRow"></div>
         <div id="locItemList"></div>
@@ -285,6 +290,11 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
 
       <!-- 総合タブ -->
       <div id="tab-total" class="section">
+        <div style="display:flex;gap:6px;margin-bottom:0.75rem;align-items:center;position:relative">
+          <input type="text" id="totalSearchInput" placeholder="🔍 商品名を検索..." style="flex:1;margin-bottom:0;font-size:14px;padding-right:32px" oninput="searchTotal(this.value)">
+          <button id="totalClearBtn" onclick="clearTotalSearch()" style="display:none;position:absolute;right:46px;top:50%;transform:translateY(-50%);background:none;border:none;color:#aaa;font-size:16px;cursor:pointer;padding:4px;line-height:1">✕</button>
+          <button class="var-mic" id="totalMicBtn" onclick="micTotalSearch()" style="width:36px;height:36px;flex-shrink:0" title="音声で検索">🎤</button>
+        </div>
         <div style="margin-bottom:0.5rem">
           <button id="disposeFilterBtn" onclick="toggleDisposeFilter()" style="padding:6px 14px;border-radius:20px;border:1px solid #fca5a5;background:#fff5f5;color:#991b1b;font-size:12px;font-weight:500;cursor:pointer">🔴 要処分のみ</button>
         </div>
@@ -312,8 +322,22 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
           <button id="checkClearBtn" onclick="clearCheckSearch()" style="display:none;position:absolute;right:46px;top:50%;transform:translateY(-50%);background:none;border:none;color:#aaa;font-size:16px;cursor:pointer;padding:4px;line-height:1">✕</button>
           <button class="var-mic" id="checkMicBtn" onclick="micCheckSearch()" style="width:36px;height:36px;flex-shrink:0" title="音声で検索">🎤</button>
         </div>
-        <div style="margin-bottom:0.75rem">
+        <div style="margin-bottom:0.5rem">
           <button id="checkDisposeBtn" onclick="toggleCheckDispose()" style="padding:6px 14px;border-radius:20px;border:1px solid #fca5a5;background:#fff5f5;color:#991b1b;font-size:12px;font-weight:500;cursor:pointer">🔴 要処分のみ</button>
+        </div>
+        <div class="chips" id="checkChips">
+          <div class="chip active" onclick="filtCheck('all',this)">すべて</div>
+          <div class="chip" onclick="filtCheck('おめん',this)">おめん</div>
+          <div class="chip" onclick="filtCheck('おもちゃ',this)">おもちゃ</div>
+          <div class="chip" onclick="filtCheck('シュシュ',this)">シュシュ</div>
+          <div class="chip" onclick="filtCheck('花火',this)">花火</div>
+          <div class="chip" onclick="filtCheck('かざ車',this)">かざ車</div>
+          <div class="chip" onclick="filtCheck('おとこのこぶき',this)">おとこぶき</div>
+          <div class="chip" onclick="filtCheck('おんなのこぶき',this)">おんなぶき</div>
+          <div class="chip" onclick="filtCheck('クリスマス',this)">クリスマス</div>
+          <div class="chip" onclick="filtCheck('お正月',this)">お正月</div>
+          <div class="chip" onclick="filtCheck('ハロウィン',this)">ハロウィン</div>
+          <div class="chip" onclick="filtCheck('その他',this)">その他</div>
         </div>
         <div id="cl"></div>
       </div>
@@ -362,7 +386,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const col = db.collection('items');
 
-let items = [], img = null, rec = null, curTab = 'add', cf = 'all', tf = 'all', sq = '', cq = '', disposeOnly = false, checkDisposeOnly = false;
+let items = [], img = null, rec = null, curTab = 'add', cf = 'all', tf = 'all', sq = '', lq = '', tq = '', cq = '', ckf = 'all', disposeOnly = false, checkDisposeOnly = false;
 let editingId = null;
 const LOC_NAMES = ['渋谷', '出町柳', '新町御池', '円町'];
 
@@ -922,6 +946,72 @@ async function setItemRank(itemId, curRank) {
   catch(e) { console.error(e); }
 }
 
+// ===== 場所別検索 =====
+function searchLoc(val) {
+  lq = val.trim();
+  const cb = document.getElementById('locClearBtn');
+  if(cb) cb.style.display = lq ? 'block' : 'none';
+  rloc();
+}
+function clearLocSearch() {
+  lq = '';
+  const inp = document.getElementById('locSearchInput');
+  if(inp) inp.value = '';
+  document.getElementById('locClearBtn').style.display = 'none';
+  rloc();
+}
+let locRec = null;
+function micLocSearch() {
+  const btn = document.getElementById('locMicBtn');
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){ alert('このブラウザは音声入力に対応していません'); return; }
+  if(locRec){ locRec.stop(); locRec=null; btn.classList.remove('rec'); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  locRec = new SR(); locRec.lang = 'ja-JP';
+  locRec.onresult = e => {
+    const txt = e.results[0][0].transcript.trim();
+    const inp = document.getElementById('locSearchInput');
+    if(inp) inp.value = txt;
+    lq = txt;
+    document.getElementById('locClearBtn').style.display = lq ? 'block' : 'none';
+    rloc();
+  };
+  locRec.onend = () => { locRec=null; btn.classList.remove('rec'); };
+  locRec.start(); btn.classList.add('rec');
+}
+
+// ===== 総合検索 =====
+function searchTotal(val) {
+  tq = val.trim();
+  const cb = document.getElementById('totalClearBtn');
+  if(cb) cb.style.display = tq ? 'block' : 'none';
+  rtotal();
+}
+function clearTotalSearch() {
+  tq = '';
+  const inp = document.getElementById('totalSearchInput');
+  if(inp) inp.value = '';
+  document.getElementById('totalClearBtn').style.display = 'none';
+  rtotal();
+}
+let totalRec = null;
+function micTotalSearch() {
+  const btn = document.getElementById('totalMicBtn');
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){ alert('このブラウザは音声入力に対応していません'); return; }
+  if(totalRec){ totalRec.stop(); totalRec=null; btn.classList.remove('rec'); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  totalRec = new SR(); totalRec.lang = 'ja-JP';
+  totalRec.onresult = e => {
+    const txt = e.results[0][0].transcript.trim();
+    const inp = document.getElementById('totalSearchInput');
+    if(inp) inp.value = txt;
+    tq = txt;
+    document.getElementById('totalClearBtn').style.display = tq ? 'block' : 'none';
+    rtotal();
+  };
+  totalRec.onend = () => { totalRec=null; btn.classList.remove('rec'); };
+  totalRec.start(); btn.classList.add('rec');
+}
+
 // ===== 総合ビュー =====
 function toggleDisposeFilter() {
   disposeOnly = !disposeOnly;
@@ -945,6 +1035,7 @@ function rtotal() {
   const el = document.getElementById('totalItemList');
   let fl = tf === 'all' ? items : items.filter(i => i.cat === tf);
   if(disposeOnly) fl = fl.filter(i => (i.rank || 0) === 1);
+  if(tq) fl = fl.filter(i => i.name && i.name.includes(tq));
   if(!fl.length){ el.innerHTML = '<div class="empty">まだ登録がないおいっす</div>'; return; }
   el.innerHTML = fl.map(it => {
     const vars = getVars(it);
@@ -991,6 +1082,7 @@ function rloc() {
   // この場所のアイテムを商品ごとにグループ化
   const locItems = [];
   items.forEach(it => {
+    if(lq && !(it.name && it.name.includes(lq))) return;
     const vars = getVars(it).filter(v => (v.loc||v.name) === curLocTab);
     if(!vars.length) return;
     const tot = vars.reduce((s,v) => s+(v.count||0), 0);
@@ -1103,11 +1195,19 @@ function micCheckSearch() {
 }
 
 // ===== チェックリスト =====
+function filtCheck(f, el) {
+  ckf = f;
+  document.querySelectorAll('#checkChips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  rc();
+}
+
 function rc() {
   const el = document.getElementById('cl');
   if(!items.length){ el.innerHTML = '<div class="empty">在庫がまだ登録されていないおいっす</div>'; return; }
   let filtered = cq ? items.filter(i => i.name && i.name.includes(cq)) : items;
   if(checkDisposeOnly) filtered = filtered.filter(i => (i.rank || 0) === 1);
+  if(ckf !== 'all') filtered = filtered.filter(i => i.cat === ckf);
   const cats = [...new Set(filtered.map(i => i.cat))];
   el.innerHTML = cats.map(cat => {
     const rows = filtered.filter(i => i.cat===cat).map(it => {
