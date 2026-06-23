@@ -721,12 +721,9 @@ function rl() {
   el.innerHTML = fl.map(it => {
     const vars = getVars(it);
     const tot = getTotal(it);
-    const rankIdx = it.rank !== undefined ? it.rank : 0;
-    const r = RANKS[rankIdx];
     const badges = vars.map(v =>
       `<span class="vbdg">${getLabel(v)} <b>${v.count||0}</b></span>`
-    ).join('') + `<span class="vbdg tot">計 <b id="vbt-${it.id}">${tot}</b></span>` +
-    `<span class="rank-badge ${r.cls}" onclick="setItemRank('${it.id}',${rankIdx})" style="vertical-align:middle">${r.label}</span>`;
+    ).join('') + `<span class="vbdg tot">計 <b id="vbt-${it.id}">${tot}</b></span>`;
     const editRows = vars.map((v, vi) => {
       const cnt = v.count||0;
       const isZero = cnt === 0;
@@ -973,7 +970,10 @@ function rtotal() {
           <div class="loc-item-name">${it.name}</div>
           <div class="loc-item-note">${it.cat}</div>
         </div>
-        <div class="loc-item-count${grandTotal===0?' zero':''}">計 ${grandTotal}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+          <div class="loc-item-count${grandTotal===0?' zero':''}">計 ${grandTotal}</div>
+          <span class="rank-badge ${RANKS[it.rank||0].cls}" onclick="setItemRank('${it.id}',${it.rank||0})">${RANKS[it.rank||0].label}</span>
+        </div>
       </div>
       ${rows}
     </div>`;
@@ -1116,13 +1116,17 @@ function rc() {
       const varBadges = vars.map(v =>
         `<span class="ck-vbdg">${getLabel(v)} ${v.count||0}</span>`
       ).join('');
+      const rkIdx = it.rank || 0;
       return `<div class="ck-row">
         <div class="ck-th">${it.img ? `<img src="${it.img}">` : '📦'}</div>
         <div class="ck-body">
           <div class="ck-name">${it.name}</div>
           <div class="ck-vars">${varBadges || '<span style="font-size:10px;color:#ccc">場所未設定</span>'}</div>
         </div>
-        <div class="ck-tot${tot===0?' zero':''}">${tot}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+          <div class="ck-tot${tot===0?' zero':''}">${tot}</div>
+          <span class="rank-badge ${RANKS[rkIdx].cls}" onclick="setItemRank('${it.id}',${rkIdx})">${RANKS[rkIdx].label}</span>
+        </div>
       </div>`;
     }).join('');
     return `<div class="ck-card"><div class="ck-cat">${cat}</div>${rows}</div>`;
