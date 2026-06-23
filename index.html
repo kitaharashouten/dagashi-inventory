@@ -578,6 +578,7 @@ async function save() {
     const data = { name: n, cat: document.getElementById('ct').value, variants: vars };
     if(img) data.img = img;
     if(isEdit) {
+      data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
       await col.doc(editingId).update(data);
       alert(n + ' を更新したおいっす！');
     } else {
@@ -756,7 +757,7 @@ async function uv(id, vi, d) {
   const tot = vars.reduce((s,v) => s+(v.count||0), 0);
   const totEl = document.getElementById('vbt-'+id);
   if(totEl) totEl.textContent = tot;
-  try { await col.doc(id).update({variants: vars}); }
+  try { await col.doc(id).update({variants: vars, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}); }
   catch(e){ console.error(e); }
 }
 
@@ -832,7 +833,7 @@ async function doMove() {
 
   closeMoveSheet();
   try {
-    await col.doc(itemId).update({variants: vars});
+    await col.doc(itemId).update({variants: vars, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
     showMoveToast(fromLoc + ' → ' + destLoc + ' に ' + moveQty + '個 移動したおいっす！');
   } catch(e) {
     alert('移動に失敗したおいっす: ' + e.message);
@@ -873,7 +874,7 @@ async function doDeleteVar() {
   const vars = it.variants ? it.variants.map(v=>({...v})) : getVars(it).map(v=>({...v}));
   vars.splice(vi, 1);
   try {
-    await col.doc(itemId).update({variants: vars});
+    await col.doc(itemId).update({variants: vars, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
     showMoveToast('削除したおいっす！');
   } catch(e) {
     alert('削除に失敗したおいっす: ' + e.message);
@@ -894,13 +895,13 @@ async function setRank(itemId, note, curRank) {
   if(!it) return;
   const ranks = Object.assign({}, it.ranks || {});
   ranks[note] = nextRank;
-  try { await col.doc(itemId).update({ranks}); }
+  try { await col.doc(itemId).update({ranks, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}); }
   catch(e) { console.error(e); }
 }
 
 async function setItemRank(itemId, curRank) {
   const nextRank = (curRank + 1) % RANKS.length;
-  try { await col.doc(itemId).update({rank: nextRank}); }
+  try { await col.doc(itemId).update({rank: nextRank, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}); }
   catch(e) { console.error(e); }
 }
 
