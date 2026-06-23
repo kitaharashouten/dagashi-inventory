@@ -238,7 +238,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
               <input type="text" id="nm" placeholder="または手入力">
               <div class="lbl">カテゴリ</div>
               <select id="ct">
-                <option>おめん</option><option>おもちゃ</option><option>シュシュ</option>
+                <option>おめん</option><option>おもちゃ</option><option>ヘアアクセ</option>
                 <option>うんち</option><option>かざ車</option><option>おとこのこぶき</option>
                 <option>おんなのこぶき</option><option>クリスマス</option>
                 <option>お正月</option><option>ハロウィン</option><option>その他</option>
@@ -273,7 +273,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
           <div class="chip active" onclick="filt('all',this)">すべて</div>
           <div class="chip" onclick="filt('おめん',this)">おめん</div>
           <div class="chip" onclick="filt('おもちゃ',this)">おもちゃ</div>
-          <div class="chip" onclick="filt('シュシュ',this)">シュシュ</div>
+          <div class="chip" onclick="filt('ヘアアクセ',this)">ヘアアクセ</div>
           <div class="chip" onclick="filt('うんち',this)">うんち</div>
           <div class="chip" onclick="filt('かざ車',this)">かざ車</div>
           <div class="chip" onclick="filt('おとこのこぶき',this)">おとこぶき</div>
@@ -312,7 +312,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
           <div class="chip active" onclick="filtTotal('all',this)">すべて</div>
           <div class="chip" onclick="filtTotal('おめん',this)">おめん</div>
           <div class="chip" onclick="filtTotal('おもちゃ',this)">おもちゃ</div>
-          <div class="chip" onclick="filtTotal('シュシュ',this)">シュシュ</div>
+          <div class="chip" onclick="filtTotal('ヘアアクセ',this)">ヘアアクセ</div>
           <div class="chip" onclick="filtTotal('うんち',this)">うんち</div>
           <div class="chip" onclick="filtTotal('かざ車',this)">かざ車</div>
           <div class="chip" onclick="filtTotal('おとこのこぶき',this)">おとこぶき</div>
@@ -339,7 +339,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:#888}
           <div class="chip active" onclick="filtCheck('all',this)">すべて</div>
           <div class="chip" onclick="filtCheck('おめん',this)">おめん</div>
           <div class="chip" onclick="filtCheck('おもちゃ',this)">おもちゃ</div>
-          <div class="chip" onclick="filtCheck('シュシュ',this)">シュシュ</div>
+          <div class="chip" onclick="filtCheck('ヘアアクセ',this)">ヘアアクセ</div>
           <div class="chip" onclick="filtCheck('うんち',this)">うんち</div>
           <div class="chip" onclick="filtCheck('かざ車',this)">かざ車</div>
           <div class="chip" onclick="filtCheck('おとこのこぶき',this)">おとこぶき</div>
@@ -815,6 +815,26 @@ function parsePrice(txt) {
   return null;
 }
 
+let genericPriceMicRec = null;
+function micPriceGeneric(id, inputId, btnId) {
+  const btn = document.getElementById(btnId);
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){ alert('このブラウザは音声入力に対応していません'); return; }
+  if(genericPriceMicRec){ genericPriceMicRec.stop(); genericPriceMicRec=null; if(btn) btn.classList.remove('rec'); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  genericPriceMicRec = new SR(); genericPriceMicRec.lang = 'ja-JP';
+  genericPriceMicRec.onresult = e => {
+    const txt = e.results[0][0].transcript.trim();
+    const price = parsePrice(txt);
+    if(price !== null) {
+      const inp = document.getElementById(inputId);
+      if(inp) inp.value = price;
+      setPrice(id, price);
+    }
+  };
+  genericPriceMicRec.onend = () => { genericPriceMicRec=null; if(btn) btn.classList.remove('rec'); };
+  genericPriceMicRec.start(); if(btn) btn.classList.add('rec');
+}
+
 let priceMicRec = null;
 function micPrice(id) {
   const btn = document.getElementById('pmb-'+id);
@@ -1128,12 +1148,18 @@ function rtotal() {
       </div>`
     ).join('');
     const thumb = it.img ? `<img src="${it.img}" alt="">` : '📦';
+    const tpv = it.price !== undefined ? it.price : '';
     return `<div class="total-item-card">
       <div class="total-item-head">
         <div class="loc-item-thumb">${thumb}</div>
         <div class="loc-item-info">
           <div class="loc-item-name">${it.name}</div>
           <div class="loc-item-note">${it.cat}</div>
+          <div class="price-row" style="border-top:none;margin-top:3px;padding-top:0">
+            <span class="price-label">¥</span>
+            <input class="price-input" type="number" min="0" placeholder="金額" value="${tpv}" onchange="setPrice('${it.id}',this.value)" id="tprice-${it.id}">
+            <button class="var-mic" id="tpmb-${it.id}" onclick="micPriceGeneric('${it.id}','tprice-${it.id}','tpmb-${it.id}')" style="width:24px;height:24px" title="音声で金額">🎤</button>
+          </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
           <div class="loc-item-count${grandTotal===0?' zero':''}">計 ${grandTotal}</div>
@@ -1291,11 +1317,17 @@ function rc() {
         `<span class="ck-vbdg">${getLabel(v)} ${v.count||0}</span>`
       ).join('');
       const rkIdx = it.rank || 0;
+      const cpv = it.price !== undefined ? it.price : '';
       return `<div class="ck-row">
         <div class="ck-th">${it.img ? `<img src="${it.img}">` : '📦'}</div>
         <div class="ck-body">
           <div class="ck-name">${it.name}</div>
           <div class="ck-vars">${varBadges || '<span style="font-size:10px;color:#ccc">場所未設定</span>'}</div>
+          <div class="price-row" style="border-top:none;margin-top:3px;padding-top:0">
+            <span class="price-label">¥</span>
+            <input class="price-input" type="number" min="0" placeholder="金額" value="${cpv}" onchange="setPrice('${it.id}',this.value)" id="cprice-${it.id}">
+            <button class="var-mic" id="cpmb-${it.id}" onclick="micPriceGeneric('${it.id}','cprice-${it.id}','cpmb-${it.id}')" style="width:24px;height:24px" title="音声で金額">🎤</button>
+          </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
           <div class="ck-tot${tot===0?' zero':''}">${tot}</div>
